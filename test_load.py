@@ -1,4 +1,4 @@
-import functions as fun
+import data_functions as fun
 from timeit import timeit
 
 CHECK_TIME = False

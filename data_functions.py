@@ -5,6 +5,57 @@ import numpy as np
 from plotly import express as px, graph_objects as go, subplots as ps
 
 
+def index_activities(folder: str, old_index, verbose=False) -> dict[str, dict[str]]:
+    """Create or update(TODO) a index of all gpx-files in activities folder.
+
+    The index is a dict indexed by ``id``, containing dicts with basic information.
+
+    ## Parameters
+    - folder (str): location to search for gpx-files.
+    - old_index (TODO)
+
+    ## Returns
+    - index (dict[str,dict])
+    """
+    filenames = glob("*.gpx", root_dir=folder)
+
+    act_index = dict()
+
+    for i, file in enumerate(filenames):
+        # load a gpx
+        with open(os.path.join(folder, file)) as f:
+            gpx = gpxpy.parse(f, "lxml")
+
+        # check file assumptions
+        if len(gpx.tracks) > 1:
+            print(f"Multiple tracks not supported,excluding {file}")
+            continue
+        if len(gpx.tracks[0].segments) > 1:
+            print(f"Multiple segments not supported,excluding {file}")
+            continue
+
+        track = gpx.tracks[0]
+        # extract metadata
+        act_info = dict()
+        act_info["name"] = track.name
+        act_info["desc"] = track.description
+        act_info["comment"] = track.comment
+        act_info["type"] = track.type
+        act_info["source"] = track.source
+        act_info["n_points"] = len(track.segments[0].points)
+        act_info["length2d_m"] = track.length_2d()  # lat,long-length [m]
+        act_info["length3d_m"] = track.length_3d()  # lat,long,elev-length [m]
+
+        # add to index
+        act_index[file] = act_info
+
+        if verbose:
+            print(act_info)
+
+        print(f"indexed file {i+1}/{len(filenames)}.")
+    return act_index
+
+
 def load_all_gpx(folder: str, sample=0) -> list:
     """Load all gpx files in folder, using ``gpxpy``.
 
@@ -16,13 +67,13 @@ def load_all_gpx(folder: str, sample=0) -> list:
     - activities (list) - list of gpxpy.gpx.GPX objects.
     """
     activities = []
-    found = glob("*.gpx", root_dir=folder)
+    filenames = glob("*.gpx", root_dir=folder)
 
     if sample > 0:
-        found = np.random.choice(found, sample)
+        filenames = np.random.choice(filenames, sample)
 
-    for i, filename in enumerate(found):
-        with open(os.path.join(folder, filename), "r", encoding="utf8") as f:
+    for i, file in enumerate(filenames):
+        with open(os.path.join(folder, file), "r", encoding="utf8") as f:
             gpx = gpxpy.parse(f, "lxml")
         if gpx.tracks and gpx.tracks[0].segments and gpx.tracks[0].segments[0].points:
             # add if not empty

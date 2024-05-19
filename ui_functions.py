@@ -2,17 +2,18 @@ import dash_ag_grid as dag
 from dash import Input, Output, html, dcc, callback
 
 
-def make_activity_list()->dag.AgGrid:
+def make_activity_list(act_index: dict) -> dag.AgGrid:
     """Create an example list."""
-    col_names = [
-        {"field": "name"},
-        {"field": "length"},
-    ]
-    row_data = [
-        {"name": "test1", "length": 1223},
-        {"name": "test2", "length": 777},
-    ]
+    col_names = [{"field": "name"}, {"field": "length"}, {"field": "date"}]
 
+    row_data = []
+    for act in act_index["activities"].values():
+        row_info = dict(
+            name=act["name"],
+            length="%.2f" % (act["length2d_m"] / 1000) + " km", 
+            date=act["time_start"].split()[0],
+        )
+        row_data.append(row_info)
 
     grid = dag.AgGrid(
         id="cellrenderer-grid",
@@ -22,7 +23,6 @@ def make_activity_list()->dag.AgGrid:
         rowData=row_data,
     )
     return grid
-
 
 
 @callback(

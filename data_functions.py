@@ -1,11 +1,18 @@
 from glob import glob
 import os
+import time
+from datetime import datetime
 import gpxpy
+import gpxpy.gpx
 import numpy as np
 from plotly import express as px, graph_objects as go, subplots as ps
 
+TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
-def index_activities(folder: str, old_index, verbose=False) -> dict[str, dict[str]]:
+
+def index_activities(
+    folder: str, old_index=None, verbose=False
+) -> dict[str, dict[str]]:
     """Create or update(TODO) a index of all gpx-files in activities folder.
 
     The index is a dict indexed by ``id``, containing dicts with basic information.
@@ -20,11 +27,12 @@ def index_activities(folder: str, old_index, verbose=False) -> dict[str, dict[st
     filenames = glob("*.gpx", root_dir=folder)
 
     act_index = dict()
+    act_index["activities"] = dict()
 
     for i, file in enumerate(filenames):
         # load a gpx
         with open(os.path.join(folder, file)) as f:
-            gpx = gpxpy.parse(f, "lxml")
+            gpx: gpxpy.gpx.GPX = gpxpy.parse(f, "lxml")
 
         # check file assumptions
         if len(gpx.tracks) > 1:
@@ -46,13 +54,24 @@ def index_activities(folder: str, old_index, verbose=False) -> dict[str, dict[st
         act_info["length2d_m"] = track.length_2d()  # lat,long-length [m]
         act_info["length3d_m"] = track.length_3d()  # lat,long,elev-length [m]
 
+        time_start, time_end = [
+            dt.strftime(TIME_FORMAT) for dt in track.get_time_bounds()
+        ]
+        act_info["time_start"] = time_start
+        act_info["time_end"] = time_end
+
         # add to index
-        act_index[file] = act_info
+        act_index["activities"][file] = act_info
 
         if verbose:
             print(act_info)
 
         print(f"indexed file {i+1}/{len(filenames)}.")
+
+    # add metadata to index
+    now = datetime.now().strftime(TIME_FORMAT)
+    act_index["created"] = now
+    act_index["updated"] = now
     return act_index
 
 

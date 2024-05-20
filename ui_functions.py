@@ -3,9 +3,11 @@ from dash import Input, Output, html, dcc, callback
 
 
 def make_activity_list(act_index: dict) -> dag.AgGrid:
-    """Create an example list."""
+    """Create an example list.
+    """
     col_names = [{"field": "name"}, {"field": "length"}, {"field": "date"}]
 
+    #TODO weird sorting of string compared to int, move unit to header?
     row_data = []
     for act in act_index["activities"].values():
         row_info = dict(
@@ -25,18 +27,18 @@ def make_activity_list(act_index: dict) -> dag.AgGrid:
     return grid
 
 
-@callback(
-    Output("cellrenderer-data", "children"),
-    Input("cellrenderer-grid", "cellRendererData"),
-)
-def show_click_data(data):
-    if data:
-        return (
-            "You selected option {} from the colId {}, rowIndex {}, rowId {}.".format(
-                data["value"],
-                data["colId"],
-                data["rowIndex"],
-                data["rowId"],
-            )
-        )
-    return "No menu item selected."
+# @callback(
+#     Output("cellrenderer-data", "children"),
+#     Input("cellrenderer-grid", "cellRendererData"),
+# )
+# def show_click_data(data):
+#     if data:
+#         return (
+#             "You selected option {} from the colId {}, rowIndex {}, rowId {}.".format(
+#                 data["value"],
+#                 data["colId"],
+#                 data["rowIndex"],
+#                 data["rowId"],
+#             )
+#         )
+#     return "No menu item selected."

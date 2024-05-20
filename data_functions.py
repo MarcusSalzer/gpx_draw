@@ -31,15 +31,21 @@ def index_activities(
 
     for i, file in enumerate(filenames):
         # load a gpx
-        with open(os.path.join(folder, file)) as f:
+        with open(os.path.join(folder, file), encoding="utf8") as f:
             gpx: gpxpy.gpx.GPX = gpxpy.parse(f, "lxml")
 
         # check file assumptions
         if len(gpx.tracks) > 1:
-            print(f"Multiple tracks not supported,excluding {file}")
+            print(f"Multiple tracks not supported, excluding {file}")
+            continue
+        if not (gpx.tracks):
+            print(f"No tracks, excluding {file}")
             continue
         if len(gpx.tracks[0].segments) > 1:
-            print(f"Multiple segments not supported,excluding {file}")
+            print(f"Multiple segments not supported, excluding {file}")
+            continue
+        if not (gpx.tracks[0].segments):
+            print(f"No segments, excluding {file}")
             continue
 
         track = gpx.tracks[0]
@@ -121,6 +127,7 @@ def plot_one_gpx(gpx: gpxpy.gpx.GPX, show_grid=False) -> go.Figure:
         template="plotly_dark",
         title=act_name + " (%.2f km)" % length_km,
         showlegend=False,
+        dragmode="pan",
     )
     fig.update_yaxes(scaleanchor="x", scaleratio=1, row=1, col=1)
 

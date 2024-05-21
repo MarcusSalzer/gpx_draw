@@ -7,25 +7,19 @@ import dash_bootstrap_components as dbc
 from dash import Dash, Input, Output, callback, dash_table, dcc, html
 
 from data_functions import index_activities, load_all_gpx, plot_one_gpx
-from ui_functions import make_activity_list
+from ui_functions import make_activity_list, make_main_greeting
 
 activities = load_all_gpx("data/activities", sample=3)
 print("loaded activities")
 
 fig_overview = plot_one_gpx(activities[0])  # .update_layout(width=600, height=400)
 
-info_md = dcc.Markdown("""
-# Hello
-                       
-This is a small prototype of a dash app.
-                       
-- We need more functions.
-""")
 
 with open("data/activity_index.json") as f:
     activity_index = json.load(f)
 
 activity_list = make_activity_list(activity_index)
+info_md = make_main_greeting(act_index=activity_index)
 
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -60,10 +54,19 @@ row1 = dbc.Row(
     ]
 )
 
+row2 = dbc.Row(
+    html.Div(
+        [
+            dcc.Markdown("Example: Row Menu Component"),
+            html.P(id="cellrenderer-data"),
+        ]
+    ),
+)
+
 tabs = dcc.Tabs(
     [
         dcc.Tab(label="Summary", children=info_md),
-        dcc.Tab(label="Activities", children=row1),
+        dcc.Tab(label="Activities", children=[row1,row2]),
     ]
 )
 

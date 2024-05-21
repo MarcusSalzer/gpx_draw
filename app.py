@@ -4,10 +4,11 @@ import json
 
 import dash_ag_grid as dag
 import dash_bootstrap_components as dbc
-from dash import Dash, Input, Output, callback, dash_table, dcc, html
+from dash import Dash, Input, Output, callback, dash_table, dcc, html, Patch
 
 from data_functions import index_activities, load_all_gpx, plot_one_gpx
 from ui_functions import make_activity_list, make_main_greeting
+
 
 activities = load_all_gpx("data/activities", sample=3)
 print("loaded activities")
@@ -53,24 +54,21 @@ row1 = dbc.Row(
         dbc.Col(html.Div(children=activity_list)),
     ]
 )
+row2 = dbc.Row(dcc.Markdown("Something..."))
 
-row2 = dbc.Row(
-    html.Div(
-        [
-            dcc.Markdown("Example: Row Menu Component"),
-            html.P(id="cellrenderer-data"),
-        ]
-    ),
-)
+settings = html.Div(children=dcc.Markdown(children="# Settings \n Coming soon..."))
+
 
 tabs = dcc.Tabs(
     [
         dcc.Tab(label="Summary", children=info_md),
         dcc.Tab(label="Activities", children=[row1,row2]),
+        dcc.Tab(label="Settings", children=settings),
     ]
 )
 
 app.layout = [html.Div(tabs)]
+
 
 if __name__ == "__main__":
     app.run(debug=True)

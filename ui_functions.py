@@ -1,6 +1,8 @@
 import dash_ag_grid as dag
-from dash import Input, Output, html, dcc, callback
+from dash import Input, Output, html, dcc, callback, Patch
 from datetime import datetime
+
+# TODO object orientation?
 
 
 def make_main_greeting(act_index: dict = None) -> dcc.Markdown:
@@ -12,6 +14,8 @@ def make_main_greeting(act_index: dict = None) -> dcc.Markdown:
         greeting = "Good afternoon"
     elif 17 <= now.hour < 21:
         greeting = "Good evening"
+    elif 22 <= now.hour < 25:
+        greeting = "Good night"
     else:
         greeting = "Hello"
 
@@ -26,9 +30,8 @@ def make_main_greeting(act_index: dict = None) -> dcc.Markdown:
         updated = act_index["updated"]
 
         lines.append(f"- You have {n_act} activities.")
-        lines.append("    - Total distance %.2f km."%(total_len/1000))
+        lines.append("    - Total distance %.1f km." % (total_len / 1000))
         lines.append(f"\n*Last updated {updated}*")
-
 
     info_md = dcc.Markdown(children="\n ".join(lines), style={"padding": "50px"})
     return info_md
@@ -37,6 +40,11 @@ def make_main_greeting(act_index: dict = None) -> dcc.Markdown:
 def make_activity_list(act_index: dict) -> dag.AgGrid:
     """Create an example list."""
     col_names = [
+        {
+            "field": "show",
+            "cellRenderer": "Button",
+            "cellRendererParams": {"className": "btn btn-success"},
+        },
         {"field": "name"},
         {
             "field": "length (km)",
@@ -51,32 +59,37 @@ def make_activity_list(act_index: dict) -> dag.AgGrid:
             "name": act["name"],
             "length (km)": act["length2d_m"] / 1000,
             "date": act["time_start"].split()[0],
+            "show": "show",
         }
         row_data.append(row_info)
 
     grid = dag.AgGrid(
-        id="cellrenderer-grid",
-        className="ag-theme-alpine",
+        id="act-list-grid",
         columnSize="sizeToFit",
-        getRowId="params.data.make",
         columnDefs=col_names,
         rowData=row_data,
+        defaultColDef={"flex": 1},
+        dashGridOptions={"animateRows": True},
     )
-    return grid
+    searchbar = dcc.Input(id="quick-filter-input", placeholder="search...")
+
+    div = html.Div(children=[searchbar, grid])
+    return div
 
 
 @callback(
-    Output("cellrenderer-data", "children"),
-    Input("cellrenderer-grid", "cellRendererData"),
+    Output("act-list-grid", "dashGridOptions"),
+    Input("quick-filter-input", "value"),
 )
-def show_click_data(data):
-    if data:
-        return (
-            "You selected option {} from the colId {}, rowIndex {}, rowId {}.".format(
-                data["value"],
-                data["colId"],
-                data["rowIndex"],
-                data["rowId"],
-            )
-        )
-    return "No menu item selected."
+def update_activity_filter(filter_value):
+    newFilter = Patch()
+    newFilter["quickFilterText"] = filter_value
+    return newFilter
+
+
+# TODO update plot
+# @callback(
+#     Output("")
+# )
+# def update_overview_plot():
+#     pass

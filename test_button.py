@@ -29,34 +29,32 @@ columnDefs = [
     {
         "field": "buy",
         "cellRenderer": "DBC_Button_Simple",
-        "cellRendererParams": {"color": "success"},
     },
 ]
 
 
 grid = dag.AgGrid(
-    id="dbc-btn-simple-btn-grid",
+    id="act-list-grid",
     columnDefs=columnDefs,
     rowData=df.to_dict("records"),
     columnSize="autoSize",
-    dashGridOptions={"rowHeight": 48},
 )
 
 
-app = Dash(__name__, external_stylesheets=[dbc.themes.SPACELAB])
+app = Dash(__name__)
 
 app.layout = html.Div(
     [
         dcc.Markdown("Example of cellRenderer with custom dash-bootstrap-components Button "),
         grid,
-        html.Div(id="dbc-btn-simple-value-changed"),
+        html.Div(id="changed"),
     ]
 )
 
 
 @callback(
-    Output("dbc-btn-simple-value-changed", "children"),
-    Input("dbc-btn-simple-btn-grid", "cellRendererData"),
+    Output("changed", "children"),
+    Input("act-list-grid", "cellRendererData"),
 )
 def showChange(n):
     return json.dumps(n)

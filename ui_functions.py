@@ -1,8 +1,14 @@
 import dash_ag_grid as dag
-from dash import Input, Output, html, dcc, callback, Patch
+from dash import Input, Output, html, dcc, callback, Patch, exceptions
 from datetime import datetime
+import json
+import os
+from data_functions import plot_one_gpx, load_one_gpx
 
 # TODO object orientation?
+
+with open("data/activity_index.json") as f:
+    activity_index: dict = json.load(f)
 
 
 def make_main_greeting(act_index: dict = None) -> dcc.Markdown:
@@ -42,8 +48,7 @@ def make_activity_list(act_index: dict) -> dag.AgGrid:
     col_names = [
         {
             "field": "show",
-            "cellRenderer": "Button",
-            "cellRendererParams": {"className": "btn btn-success"},
+            "cellRenderer": "DBC_Button_Simple",
         },
         {"field": "name"},
         {
@@ -65,7 +70,7 @@ def make_activity_list(act_index: dict) -> dag.AgGrid:
 
     grid = dag.AgGrid(
         id="act-list-grid",
-        columnSize="sizeToFit",
+        columnSize="autoSize",
         columnDefs=col_names,
         rowData=row_data,
         defaultColDef={"flex": 1},
@@ -87,9 +92,20 @@ def update_activity_filter(filter_value):
     return newFilter
 
 
+@callback(
+    # Output("changed", "children"),
+    Output("fig_act_overview", "figure"),
+    Input("act-list-grid", "cellRendererData"),
+)
+def change_plot(n):
+    if not n:
+        raise exceptions.PreventUpdate()
+
+    idx = int(n["rowId"])
+    filename = list(activity_index["activities"].keys())[idx]
+    gpx = load_one_gpx(os.path.join("data", "activities", filename))
+
+    return plot_one_gpx(gpx)
+
+
 # TODO update plot
-# @callback(
-#     Output("")
-# )
-# def update_overview_plot():
-#     pass

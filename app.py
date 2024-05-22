@@ -17,7 +17,7 @@ fig_overview = plot_one_gpx(activities[0])  # .update_layout(width=600, height=4
 
 
 with open("data/activity_index.json") as f:
-    activity_index = json.load(f)
+    activity_index:dict = json.load(f)
 
 activity_list = make_activity_list(activity_index)
 info_md = make_main_greeting(act_index=activity_index)
@@ -28,33 +28,18 @@ app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 div_block_style = dict(width="49%", display="inline-block")
 
 
-layout1 = [
-    html.Div(children="Hello World"),
-    html.Div(
-        dcc.Graph(figure=fig_overview, config={"scrollZoom": True}),
-        style=div_block_style,
-    ),
-    html.Div(info_md, style=div_block_style),
-    html.Div(
-        [
-            dcc.Markdown("Example: Row Menu Component"),
-            activity_list,
-            html.P(id="cellrenderer-data"),
-        ]
-    ),
-]
-
-
 row1 = dbc.Row(
     [
         dbc.Col(
-            dcc.Graph(figure=fig_overview, config={"scrollZoom": True}),
+            dcc.Graph(
+                id="fig_act_overview", figure=fig_overview, config={"scrollZoom": True}
+            ),
             style=div_block_style,
         ),
         dbc.Col(html.Div(children=activity_list)),
     ]
 )
-row2 = dbc.Row(dcc.Markdown("Something..."))
+row2 = dbc.Row(dcc.Markdown(children="Something...", id="changed"))
 
 settings = html.Div(children=dcc.Markdown(children="# Settings \n Coming soon..."))
 
@@ -62,7 +47,7 @@ settings = html.Div(children=dcc.Markdown(children="# Settings \n Coming soon...
 tabs = dcc.Tabs(
     [
         dcc.Tab(label="Summary", children=info_md),
-        dcc.Tab(label="Activities", children=[row1,row2]),
+        dcc.Tab(label="Activities", children=[row1, row2]),
         dcc.Tab(label="Settings", children=settings),
     ]
 )

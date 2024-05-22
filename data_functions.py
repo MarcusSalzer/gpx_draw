@@ -106,6 +106,11 @@ def load_all_gpx(folder: str, sample=0) -> list:
 
     return activities
 
+def load_one_gpx(filepath:str):
+    with open(filepath, "r", encoding="utf8") as f:
+        gpx = gpxpy.parse(f, "lxml")
+    if gpx.tracks and gpx.tracks[0].segments and gpx.tracks[0].segments[0].points:
+        return gpx
 
 def plot_one_gpx(gpx: gpxpy.gpx.GPX, show_grid=False) -> go.Figure:
     """Create a figure for one gpx.

@@ -2,6 +2,13 @@
 
 Here we are working on a gpx visualization and activity statistics app.
 
+## Features
+
+- Main page with greeting
+- Activity view
+    - Activity list, search and sort
+    - Trace and altitude plot
+
 ## todo
 
 - Summary

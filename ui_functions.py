@@ -10,6 +10,9 @@ from data_functions import plot_one_gpx, load_one_gpx
 with open("data/activity_index.json") as f:
     activity_index: dict = json.load(f)
 
+with open("data/settings.json") as f:
+    settings: dict = json.load(f)
+
 
 def make_main_greeting(act_index: dict = None) -> dcc.Markdown:
     now = datetime.now()
@@ -74,9 +77,9 @@ def make_activity_list(act_index: dict) -> dag.AgGrid:
         columnDefs=col_names,
         rowData=row_data,
         defaultColDef={"flex": 1},
-        dashGridOptions={"animateRows": True},
+        dashGridOptions={"animateRows": settings["animate_ui"]},
     )
-    searchbar = dcc.Input(id="quick-filter-input", placeholder="search...")
+    searchbar = dcc.Input(id="act-list-search", placeholder="search...")
 
     div = html.Div(children=[searchbar, grid])
     return div
@@ -84,9 +87,10 @@ def make_activity_list(act_index: dict) -> dag.AgGrid:
 
 @callback(
     Output("act-list-grid", "dashGridOptions"),
-    Input("quick-filter-input", "value"),
+    Input("act-list-search", "value"),
 )
 def update_activity_filter(filter_value):
+    """Callback. Apply a quick filter to activity list"""
     newFilter = Patch()
     newFilter["quickFilterText"] = filter_value
     return newFilter
@@ -98,6 +102,7 @@ def update_activity_filter(filter_value):
     Input("act-list-grid", "cellRendererData"),
 )
 def change_plot(n):
+    """Callback. Update the activity overview plot when selected from list."""
     if not n:
         raise exceptions.PreventUpdate()
 
@@ -108,4 +113,9 @@ def change_plot(n):
     return plot_one_gpx(gpx)
 
 
-# TODO update plot
+def make_settings():
+    """make settings page"""
+    check_list = dcc.Checklist(options=["Animate UI"])
+    return check_list
+
+# TODO callback for settings

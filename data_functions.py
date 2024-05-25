@@ -6,6 +6,7 @@ import gpxpy
 import gpxpy.gpx
 import numpy as np
 from plotly import express as px, graph_objects as go, subplots as ps
+import pandas as pd
 
 TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -106,21 +107,23 @@ def load_all_gpx(folder: str, sample=0) -> list:
 
     return activities
 
-def load_one_gpx(filepath:str):
+
+def load_one_gpx(filepath: str):
     with open(filepath, "r", encoding="utf8") as f:
         gpx = gpxpy.parse(f, "lxml")
     if gpx.tracks and gpx.tracks[0].segments and gpx.tracks[0].segments[0].points:
         return gpx
 
+
 def plot_one_gpx(gpx: gpxpy.gpx.GPX, show_grid=False) -> go.Figure:
     """Create a figure for one gpx.
-    Note: supports only single track gpx files"""
+    Note: supports only single track, single segment, gpx files"""
     points = gpx.tracks[0].segments[0].points
     lat = [p.latitude for p in points]
     lon = [p.longitude for p in points]
     elev = [p.elevation for p in points]
     time = [p.time for p in points]
-    act_name = gpx.name if gpx.name else "Activity"
+    act_name = gpx.tracks[0].name if gpx.name else "Activity"
     length_km = gpx.tracks[0].length_2d() / 1000
 
     fig = ps.make_subplots(
@@ -139,4 +142,16 @@ def plot_one_gpx(gpx: gpxpy.gpx.GPX, show_grid=False) -> go.Figure:
     fig.update_xaxes(showgrid=show_grid)
     fig.update_yaxes(showgrid=show_grid)
 
+    return fig
+
+
+def summary_plot(act_index: dict):
+    """Plot an overview of indexed activities."""
+
+    df = pd.DataFrame.from_dict(act_index["activities"], orient="index")
+    df["time_start"] = pd.to_datetime(df["time_start"], format="%Y-%m-%d %H:%M:%S")
+    df["year"] = df["time_start"].dt.year
+    act_year = df.groupby("year").size()
+
+    fig = px.bar(act_year, template="plotly_dark")
     return fig

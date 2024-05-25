@@ -22,7 +22,6 @@ Here we are working on a gpx visualization and activity statistics app.
     - loading activity on selection
         - needs to be fast. Convert gpx tracks to faster format (csv?) load pandas/polars?
         - custom component? 
-        - loading indicator
     - show activity type
 - Settings
     - enable animation

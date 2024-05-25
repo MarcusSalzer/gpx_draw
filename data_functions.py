@@ -115,9 +115,13 @@ def load_one_gpx(filepath: str):
         return gpx
 
 
-def plot_one_gpx(gpx: gpxpy.gpx.GPX, show_grid=False) -> go.Figure:
+def plot_one_gpx(gpx: gpxpy.gpx.GPX = None, show_grid=False) -> go.Figure:
     """Create a figure for one gpx.
     Note: supports only single track, single segment, gpx files"""
+
+    if not gpx:
+        return go.Figure()
+
     points = gpx.tracks[0].segments[0].points
     lat = [p.latitude for p in points]
     lon = [p.longitude for p in points]

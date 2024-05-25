@@ -2,41 +2,39 @@
 
 import json
 
+from dash.development.base_component import Component
 import dash_bootstrap_components as dbc
 from dash import Dash, dcc, html
 
-from data_functions import load_all_gpx, plot_one_gpx, summary_plot
+from data_functions import load_one_gpx, plot_one_gpx, summary_plot
 from ui_functions import make_activity_list, make_main_greeting, make_settings
-
-
-activities = load_all_gpx("data/activities", sample=3)
-print("loaded activities")
-
-fig_overview = plot_one_gpx(activities[0])  # .update_layout(width=600, height=400)
-
 
 with open("data/activity_index.json") as f:
     activity_index: dict = json.load(f)
 
-
-activity_list = make_activity_list(activity_index)
-info_md = make_main_greeting(act_index=activity_index)
-
-main_sum_plot = summary_plot(activity_index)
-
-
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-div_block_style = dict(width="49%", display="inline-block")
+info_md = make_main_greeting(activity_index)
+main_sum_plot = summary_plot(activity_index)
+
+activity_list = make_activity_list(activity_index)
+
+# TODO: display most recent activity first
+
+overview_fig = plot_one_gpx()
 
 
 row1 = dbc.Row(
     [
         dbc.Col(
-            dcc.Graph(
-                id="fig_act_overview", figure=fig_overview, config={"scrollZoom": True}
+            dcc.Loading(
+                dcc.Graph(
+                    id="fig_act_overview",
+                    figure=overview_fig,
+                    config={"scrollZoom": True},
+                ),
+                type="default",
             ),
-            style=div_block_style,
         ),
         dbc.Col(html.Div(children=activity_list)),
     ]

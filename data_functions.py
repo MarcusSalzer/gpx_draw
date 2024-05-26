@@ -1,19 +1,17 @@
 from glob import glob
 import os
-import time
-from datetime import datetime
+from datetime import datetime, date
 import gpxpy
 import gpxpy.gpx
 import numpy as np
 from plotly import express as px, graph_objects as go, subplots as ps
 import pandas as pd
+import json
 
 TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
-def index_activities(
-    folder: str, old_index=None, verbose=False
-) -> dict[str, dict[str]]:
+def index_activities(folder: str, old_index=None, verbose=False) -> dict[str]:
     """Create or update(TODO) a index of all gpx-files in activities folder.
 
     The index is a dict indexed by ``id``, containing dicts with basic information.
@@ -23,7 +21,7 @@ def index_activities(
     - old_index (TODO)
 
     ## Returns
-    - index (dict[str,dict])
+    - index (dict)
     """
     filenames = glob("*.gpx", root_dir=folder)
 
@@ -61,11 +59,8 @@ def index_activities(
         act_info["length2d_m"] = track.length_2d()  # lat,long-length [m]
         act_info["length3d_m"] = track.length_3d()  # lat,long,elev-length [m]
 
-        time_start, time_end = [
-            dt.strftime(TIME_FORMAT) for dt in track.get_time_bounds()
-        ]
-        act_info["time_start"] = time_start
-        act_info["time_end"] = time_end
+        act_info["time_start"] = track.get_time_bounds().start_time
+        act_info["time_end"] = track.get_time_bounds().end_time
 
         # add to index
         act_index["activities"][file] = act_info
@@ -76,10 +71,47 @@ def index_activities(
         print(f"indexed file {i+1}/{len(filenames)}.")
 
     # add metadata to index
-    now = datetime.now().strftime(TIME_FORMAT)
+    now = datetime.now()
     act_index["created"] = now
     act_index["updated"] = now
     return act_index
+
+
+def serialize_json(obj):
+    """Create resonable serializations for datatypes used here."""
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
+    raise TypeError("cannot serialize object (%s)" % type(obj))
+
+
+def load_act_index(filepath):
+    """Load activity index
+
+    ## Returns
+    - act_index (dict): with keys 'activities', 'updated' and 'created'.
+        - 'activities' is a list of dicts with keys 'name'...
+    """
+    with open(filepath, encoding="utf8") as f:
+        act_index = json.load(f)
+
+    # convert to datetime
+    act_index["updated"] = datetime.fromisoformat(act_index["updated"])
+    act_index["created"] = datetime.fromisoformat(act_index["created"])
+
+    for k in act_index["activities"].keys():
+        act_index["activities"][k]["time_start"] = datetime.fromisoformat(
+            act_index["activities"][k]["time_start"]
+        )
+        act_index["activities"][k]["time_end"] = datetime.fromisoformat(
+            act_index["activities"][k]["time_end"]
+        )
+    return act_index
+
+
+def save_act_index(filepath, act_index):
+    """Save activity index"""
+    with open(filepath, mode="w", encoding="utf8") as f:
+        json.dump(act_index, f, default=serialize_json)
 
 
 def load_all_gpx(folder: str, sample=0) -> list:

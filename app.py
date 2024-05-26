@@ -1,16 +1,15 @@
 ## try making a small dash app
 
-import json
 
-from dash.development.base_component import Component
 import dash_bootstrap_components as dbc
 from dash import Dash, dcc, html
 
-from data_functions import load_one_gpx, plot_one_gpx, summary_plot
+from data_functions import summary_plot
+import data_functions as dataf
 from ui_functions import make_activity_list, make_main_greeting, make_settings
+import os
 
-with open("data/activity_index.json") as f:
-    activity_index: dict = json.load(f)
+activity_index = dataf.load_act_index(os.path.join("data", "activity_index.json"))
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -19,9 +18,13 @@ main_sum_plot = summary_plot(activity_index)
 
 activity_list = make_activity_list(activity_index)
 
-# TODO: display most recent activity first
 
-overview_fig = plot_one_gpx()
+latest_act_file = max(
+    activity_index["activities"],
+    key=lambda act: activity_index["activities"][act]["time_start"],
+)
+latest_act = dataf.load_one_gpx(os.path.join("data", "activities", latest_act_file))
+overview_fig = dataf.plot_one_gpx(latest_act)
 
 
 row1 = dbc.Row(

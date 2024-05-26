@@ -36,11 +36,11 @@ def make_main_greeting(act_index: dict = None) -> dcc.Markdown:
     if act_index:
         n_act = len(act_index["activities"])
         total_len = sum(act["length2d_m"] for act in act_index["activities"].values())
-        updated = act_index["updated"]
+        updated:datetime = act_index["updated"]
 
         lines.append(f"- You have {n_act} activities.")
         lines.append("    - Total distance %.1f km." % (total_len / 1000))
-        lines.append(f"\n*Last updated {updated}*")
+        lines.append(f"\n*Last updated {updated.date()}*")
 
     info_md = dcc.Markdown(children="\n ".join(lines), style={"padding": "50px"})
     return info_md
@@ -66,7 +66,7 @@ def make_activity_list(act_index: dict) -> dag.AgGrid:
         row_info = {
             "name": act["name"],
             "length (km)": act["length2d_m"] / 1000,
-            "date": act["time_start"].split()[0],
+            "date": act["time_start"].date(),
             "show": "show",
         }
         row_data.append(row_info)

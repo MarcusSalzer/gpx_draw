@@ -1,14 +1,14 @@
-from data_functions import index_activities
-from timeit import timeit
+import data_functions as dataf
 import os
-import json
 
 ACT_DIR = os.path.join("data", "activities")
-act_index = index_activities(ACT_DIR, None, verbose=False)
+act_index = dataf.index_activities(ACT_DIR, None, verbose=False)
 
-with open(os.path.join("data","activity_index.json"),"w") as f:
-    json.dump(act_index,f)
-    print("saved index!")
+index_path = os.path.join("data", "activity_index.json")
+
+dataf.save_act_index(index_path, act_index)
+
+print("saved index!")
 
 print("===")
 print(act_index)

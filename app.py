@@ -44,9 +44,7 @@ row1 = dbc.Row(
 )
 row2 = dbc.Row(dcc.Markdown(children="Something...", id="changed"))
 
-settings_page = html.Div(
-    children=[dcc.Markdown(children="# Settings"), make_settings()]
-)
+settings_page = make_settings()
 
 
 tabs = dcc.Tabs(

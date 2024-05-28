@@ -1,9 +1,27 @@
-import dash_ag_grid as dag
-from dash import Input, Output, html, dcc, callback, Patch, exceptions
-from datetime import datetime
 import json
 import os
+from datetime import datetime
+import plotly.io as pio
+
+import dash_ag_grid as dag
+import dash_bootstrap_components as dbc
+from dash import (
+    Input,
+    Output,
+    Patch,
+    callback,
+    clientside_callback,
+    dcc,
+    exceptions,
+    html,
+)
+
 import data_functions as dataf
+
+from dash_bootstrap_templates import load_figure_template
+
+# adds  templates to plotly.io
+load_figure_template(["minty", "minty_dark"])
 
 SETTINGS_PATH = os.path.join("data", "settings.json")
 
@@ -94,7 +112,7 @@ def update_activity_filter(filter_value):
 
 
 @callback(
-    Output("fig_act_overview", "figure"),
+    Output("fig-act-overview", "figure"),
     Input("act-list-grid", "cellRendererData"),
 )
 def change_plot(n):
@@ -140,3 +158,44 @@ def update_settings_checklist(val):
                 settings_dict[k] = False
 
     dataf.save_settings(SETTINGS_PATH, settings_dict)
+
+
+def make_dark_light_switch():
+    return html.Span(
+        [
+            dbc.Label(className="fa fa-moon", html_for="switch"),
+            dbc.Switch(
+                id="switch",
+                value=True,
+                className="d-inline-block ms-1",
+                persistence=True,
+            ),
+            dbc.Label(className="fa fa-sun", html_for="switch"),
+        ]
+    )
+
+
+@callback(
+    Output("main-sum-plot", "figure"),
+    Input("switch", "value"),
+)
+def update_figure_template(switch_on):
+    # When using Patch() to update the figure template, you must use the figure template dict
+    # from plotly.io  and not just the template name
+    template = pio.templates["minty"] if switch_on else pio.templates["minty_dark"]
+
+    patched_figure = Patch()
+    patched_figure["layout"]["template"] = template
+    return patched_figure
+
+
+clientside_callback(
+    """ 
+    (switchOn) => {
+       document.documentElement.setAttribute('data-bs-theme', switchOn ? 'light' : 'dark');  
+       return window.dash_clientside.no_update
+    }
+    """,
+    Output("switch", "id"),
+    Input("switch", "value"),
+)

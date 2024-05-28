@@ -1,7 +1,5 @@
-import json
 import os
 from datetime import datetime
-import plotly.io as pio
 
 import dash_ag_grid as dag
 import dash_bootstrap_components as dbc
@@ -10,15 +8,14 @@ from dash import (
     Output,
     Patch,
     callback,
-    clientside_callback,
     dcc,
     exceptions,
     html,
 )
+from dash_bootstrap_templates import load_figure_template
 
 import data_functions as dataf
-
-from dash_bootstrap_templates import load_figure_template
+import plot_functions as plotf
 
 # adds  templates to plotly.io
 load_figure_template(["minty", "minty_dark"])
@@ -55,6 +52,7 @@ def make_main_greeting(act_index: dict = None) -> dcc.Markdown:
 
         lines.append(f"- You have {n_act} activities.")
         lines.append("    - Total distance %.1f km." % (total_len / 1000))
+        lines.append("\nAll time, all activity E=%d" % dataf.eddington_nbr(act_index))
         lines.append(f"\n*Last updated {updated.date()}*")
 
     info_md = dcc.Markdown(children="\n ".join(lines), style={"padding": "50px"})
@@ -124,7 +122,7 @@ def change_plot(n):
     filename = list(activity_index["activities"].keys())[idx]
     gpx = dataf.load_one_gpx(os.path.join("data", "activities", filename))
 
-    return dataf.plot_one_gpx(gpx)
+    return plotf.plot_one_gpx(gpx)
 
 
 def make_settings():
@@ -175,27 +173,27 @@ def make_dark_light_switch():
     )
 
 
-@callback(
-    Output("main-sum-plot", "figure"),
-    Input("switch", "value"),
-)
-def update_figure_template(switch_on):
-    # When using Patch() to update the figure template, you must use the figure template dict
-    # from plotly.io  and not just the template name
-    template = pio.templates["minty"] if switch_on else pio.templates["minty_dark"]
+# @callback(
+#     Output("main-sum-plot", "figure"),
+#     Input("switch", "value"),
+# )
+# def update_figure_template(switch_on):
+#     # When using Patch() to update the figure template, you must use the figure template dict
+#     # from plotly.io  and not just the template name
+#     template = pio.templates["minty"] if switch_on else pio.templates["minty_dark"]
 
-    patched_figure = Patch()
-    patched_figure["layout"]["template"] = template
-    return patched_figure
+#     patched_figure = Patch()
+#     patched_figure["layout"]["template"] = template
+#     return patched_figure
 
 
-clientside_callback(
-    """ 
-    (switchOn) => {
-       document.documentElement.setAttribute('data-bs-theme', switchOn ? 'light' : 'dark');  
-       return window.dash_clientside.no_update
-    }
-    """,
-    Output("switch", "id"),
-    Input("switch", "value"),
-)
+# clientside_callback(
+#     """
+#     (switchOn) => {
+#        document.documentElement.setAttribute('data-bs-theme', switchOn ? 'light' : 'dark');
+#        return window.dash_clientside.no_update
+#     }
+#     """,
+#     Output("switch", "id"),
+#     Input("switch", "value"),
+# )

@@ -1,12 +1,11 @@
-from glob import glob
+import json
 import os
-from datetime import datetime, date
+from datetime import date, datetime
+from glob import glob
+
 import gpxpy
 import gpxpy.gpx
 import numpy as np
-from plotly import express as px, graph_objects as go, subplots as ps
-import pandas as pd
-import json
 
 TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -156,48 +155,25 @@ def load_one_gpx(filepath: str):
     if gpx.tracks and gpx.tracks[0].segments and gpx.tracks[0].segments[0].points:
         return gpx
 
+def eddington_nbr(act_index: dict) -> int:
+    """Compute Eddington number (km) for all activities.
+    Based on 2d-distance per day"""
 
-def plot_one_gpx(gpx: gpxpy.gpx.GPX = None, show_grid=False) -> go.Figure:
-    """Create a figure for one gpx.
-    Note: supports only single track, single segment, gpx files"""
+    # count distance per day
+    dist_per_day = {}
+    for k in act_index["activities"].keys():
+        date = str(act_index["activities"][k]["time_start"].date())
+        if date in dist_per_day.keys():
+            dist_per_day[date] += act_index["activities"][k]["length2d_m"]
+        else:
+            dist_per_day[date] = act_index["activities"][k]["length2d_m"]
 
-    if not gpx:
-        return go.Figure()
+    # Covert m -> km, sort descending.
+    dists = sorted((np.array(list(dist_per_day.values())) / 1000), reverse=True)
 
-    points = gpx.tracks[0].segments[0].points
-    lat = [p.latitude for p in points]
-    lon = [p.longitude for p in points]
-    elev = [p.elevation for p in points]
-    time = [p.time for p in points]
-    act_name = gpx.tracks[0].name if gpx.name else "Activity"
-    length_km = gpx.tracks[0].length_2d() / 1000
-
-    fig = ps.make_subplots(
-        rows=2, cols=1, row_heights=[0.7, 0.3], subplot_titles=["Trace", "Altitude"]
-    )
-    fig.add_trace(go.Scatter(x=lon, y=lat), row=1, col=1)
-    fig.add_trace(go.Scatter(x=time, y=elev), row=2, col=1)
-    fig.update_layout(
-        template="plotly_dark",
-        title=act_name + " (%.2f km)" % length_km,
-        showlegend=False,
-        dragmode="pan",
-    )
-    fig.update_yaxes(scaleanchor="x", scaleratio=1, row=1, col=1)
-
-    fig.update_xaxes(showgrid=show_grid)
-    fig.update_yaxes(showgrid=show_grid)
-
-    return fig
-
-
-def summary_plot(act_index: dict):
-    """Plot an overview of indexed activities."""
-
-    df = pd.DataFrame.from_dict(act_index["activities"], orient="index")
-    df["time_start"] = pd.to_datetime(df["time_start"], format="%Y-%m-%d %H:%M:%S")
-    df["year"] = df["time_start"].dt.year
-    act_year = df.groupby("year").size()
-
-    fig = px.bar(act_year, template="plotly_dark")
-    return fig
+    # Compute E. i counts number of days, d is the distance
+    E = 0
+    for i, d in enumerate(dists):
+        if d >= i + 1:
+            E = i + 1
+    return E

@@ -76,6 +76,39 @@ def index_activities(folder: str, old_index=None, verbose=False) -> dict[str]:
     return act_index
 
 
+def check_index(act_index: dict):
+    """Check index for duplicates and more"""
+
+    info = []
+
+    info.append("index created : %s" % act_index["created"])
+    info.append("index updated : %s" % act_index["updated"])
+    info.append("since update  : %s" % (datetime.now() - act_index["updated"]))
+
+    acts = act_index["activities"]
+
+    info.append("activity count: %s" % len(acts))
+
+    duplicates = find_duplicates(acts)
+
+    info.append("found duplicates :%s" % len(duplicates))
+
+    return info
+
+
+def find_duplicates(acts: dict):
+    matches = []
+    act_list = list(acts.values())
+    names_list = list(acts.keys())
+
+    for i, a1 in enumerate(act_list[:-1]):
+        for j in range(i + 1, len(act_list)):
+            a2 = act_list[j]
+            if a1 == a2:
+                matches.append((i, j))
+    return [(names_list[i], names_list[j]) for i, j in matches]
+
+
 def serialize_json(obj):
     """Create resonable serializations for datatypes used here."""
     if isinstance(obj, (datetime, date)):
@@ -154,6 +187,7 @@ def load_one_gpx(filepath: str):
         gpx = gpxpy.parse(f, "lxml")
     if gpx.tracks and gpx.tracks[0].segments and gpx.tracks[0].segments[0].points:
         return gpx
+
 
 def eddington_nbr(act_index: dict) -> int:
     """Compute Eddington number (km) for all activities.

@@ -6,6 +6,7 @@ from glob import glob
 import gpxpy
 import gpxpy.gpx
 import numpy as np
+import pandas as pd
 
 TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -48,18 +49,7 @@ def index_activities(folder: str, old_index=None, verbose=False) -> dict[str]:
 
         track = gpx.tracks[0]
         # extract metadata
-        act_info = dict()
-        act_info["name"] = track.name
-        act_info["desc"] = track.description
-        act_info["comment"] = track.comment
-        act_info["type"] = track.type
-        act_info["source"] = track.source
-        act_info["n_points"] = len(track.segments[0].points)
-        act_info["length2d_m"] = track.length_2d()  # lat,long-length [m]
-        act_info["length3d_m"] = track.length_3d()  # lat,long,elev-length [m]
-
-        act_info["time_start"] = track.get_time_bounds().start_time
-        act_info["time_end"] = track.get_time_bounds().end_time
+        act_info = Act.info_from_gpx_track(track)
 
         # add to index
         act_index["activities"][file] = act_info
@@ -76,6 +66,63 @@ def index_activities(folder: str, old_index=None, verbose=False) -> dict[str]:
     return act_index
 
 
+class Act:
+    """Object representing an activity with one track and some metadata"""
+
+    def __init__(self, metadata: dict, points: pd.DataFrame) -> None:
+        self.metadata = metadata
+        self.points = points
+
+    def __str__(self) -> str:
+        return "\n".join(
+            [
+                str(k) + " " * (15 - len(str(k))) + " : " + str(self.metadata[k])
+                for k in self.metadata.keys()
+            ]
+        )
+
+    @classmethod
+    def from_gpxpy(cls, gpx: gpxpy.gpx.GPX) -> "Act":
+        assert (
+            gpx.tracks and gpx.tracks[0].segments and gpx.tracks[0].segments[0].points
+        ), "Incompatible GPX"
+
+        track = gpx.tracks[0]
+
+        # extract metadata
+        act_info = cls.info_from_gpx_track(track)
+
+        points = gpx.tracks[0].segments[0].points
+
+        points = pd.DataFrame.from_dict(
+            {
+                "lon": [p.longitude for p in points],
+                "lat": [p.latitude for p in points],
+                "elev": [p.elevation for p in points],
+                "time": [p.time for p in points],
+            },
+        )
+
+        return Act(metadata=act_info, points=points)
+
+    @staticmethod
+    def info_from_gpx_track(track) -> dict[str]:
+        """Extract common metadata from a gpx_track"""
+        act_info = dict()
+        act_info["name"] = track.name
+        act_info["desc"] = track.description
+        act_info["comment"] = track.comment
+        act_info["type"] = track.type
+        act_info["source"] = track.source
+        act_info["n_points"] = len(track.segments[0].points)
+        act_info["length2d_m"] = track.length_2d()  # lat,long-length [m]
+        act_info["length3d_m"] = track.length_3d()  # lat,long,elev-length [m]
+
+        act_info["time_start"] = track.get_time_bounds().start_time
+        act_info["time_end"] = track.get_time_bounds().end_time
+        return act_info
+
+
 def check_index(act_index: dict):
     """Check index for duplicates and more"""
 
@@ -86,11 +133,9 @@ def check_index(act_index: dict):
     info.append("since update  : %s" % (datetime.now() - act_index["updated"]))
 
     acts = act_index["activities"]
-
-    info.append("activity count: %s" % len(acts))
-
     duplicates = find_duplicates(acts)
 
+    info.append("activity count: %s" % len(acts))
     info.append("found duplicates :%s" % len(duplicates))
 
     return info
@@ -156,7 +201,7 @@ def save_settings(filepath: str, settings_dict: dict):
         json.dump(settings_dict, f, indent=4)
 
 
-def load_all_gpx(folder: str, sample=0) -> list:
+def load_all_gpx(folder: str, sample=0) -> list[gpxpy.gpx.GPX]:
     """Load all gpx files in folder, using ``gpxpy``.
 
     ## Parameters
@@ -190,7 +235,7 @@ def load_one_gpx(filepath: str):
 
 
 def eddington_nbr(act_index: dict) -> int:
-    """Compute Eddington number (km) for all activities.
+    """Compute all time Eddington number (km/day) for all activities.
     Based on 2d-distance per day"""
 
     # count distance per day

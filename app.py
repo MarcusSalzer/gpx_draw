@@ -7,10 +7,10 @@ import dash_bootstrap_components as dbc
 from dash import Dash, dcc, html
 from dash_bootstrap_templates import load_figure_template
 
-import data_functions as dataf
-import plot_functions as plotf
-import ui_functions as uif
-from ui_functions import make_activity_list, make_main_greeting, make_settings
+import app_functions.data_functions as dataf
+import app_functions.plot_functions as plotf
+import app_functions.ui_functions as uif
+from app_functions.ui_functions import make_activity_list, make_main_greeting, make_settings
 
 activity_index = dataf.load_act_index(os.path.join("data", "activity_index.json"))
 

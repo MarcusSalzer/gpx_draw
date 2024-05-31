@@ -1,5 +1,5 @@
 import numpy as np
-import data_functions as dataf
+from app_functions import data_functions as dataf
 import os
 from timeit import timeit
 

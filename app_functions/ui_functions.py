@@ -14,8 +14,8 @@ from dash import (
 )
 from dash_bootstrap_templates import load_figure_template
 
-import data_functions as dataf
-import plot_functions as plotf
+import app_functions.data_functions as dataf
+import app_functions.plot_functions as plotf
 
 # adds  templates to plotly.io
 load_figure_template(["minty", "minty_dark"])

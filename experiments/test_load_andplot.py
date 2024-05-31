@@ -1,4 +1,4 @@
-import data_functions as dataf
+import app_functions.data_functions as dataf
 from timeit import timeit
 
 CHECK_TIME = False

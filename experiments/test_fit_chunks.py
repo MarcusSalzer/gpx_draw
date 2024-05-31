@@ -47,12 +47,3 @@ for c, name in zip(counts, found_m_unique):
 
 print("total:", sum(counts))
 
-## again
-print("======")
-fit = tuple(
-    fitdecode.FitReader(
-        filepath, check_crc=fitdecode.CrcCheck.RAISE, keep_raw_chunks=False
-    )
-)
-print(len(fit))
-print(fit[2])

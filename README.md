@@ -11,12 +11,13 @@ Here we are working on a gpx visualization and activity statistics app.
 
 ## todo
 
+- Data
+    - import FIT
 - Summary
     - timeframes: weekly, monthly, yearly, all time
     - interesting stats:
         - cumulative distance (per type?)
         - altitude gain
-        - Eddington number
 - Activities
     - show activity type
 - Settings

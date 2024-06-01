@@ -3,6 +3,7 @@ import os
 from datetime import date, datetime
 from glob import glob
 
+import fitdecode
 import gpxpy
 import gpxpy.gpx
 import numpy as np
@@ -49,7 +50,7 @@ def index_activities(folder: str, old_index=None, verbose=False) -> dict[str]:
 
         track = gpx.tracks[0]
         # extract metadata
-        act_info = Act.info_from_gpx_track(track)
+        act_info = info_from_gpx_track(track)
 
         # add to index
         act_index["activities"][file] = act_info
@@ -66,47 +67,7 @@ def index_activities(folder: str, old_index=None, verbose=False) -> dict[str]:
     return act_index
 
 
-class Act:
-    """Object representing an activity with one track and some metadata"""
-
-    def __init__(self, metadata: dict, points: pd.DataFrame) -> None:
-        self.metadata = metadata
-        self.points = points
-
-    def __str__(self) -> str:
-        return "\n".join(
-            [
-                str(k) + " " * (15 - len(str(k))) + " : " + str(self.metadata[k])
-                for k in self.metadata.keys()
-            ]
-        )
-
-    @classmethod
-    def from_gpxpy(cls, gpx: gpxpy.gpx.GPX) -> "Act":
-        assert (
-            gpx.tracks and gpx.tracks[0].segments and gpx.tracks[0].segments[0].points
-        ), "Incompatible GPX"
-
-        track = gpx.tracks[0]
-
-        # extract metadata
-        act_info = cls.info_from_gpx_track(track)
-
-        points = gpx.tracks[0].segments[0].points
-
-        points = pd.DataFrame.from_dict(
-            {
-                "lon": [p.longitude for p in points],
-                "lat": [p.latitude for p in points],
-                "elev": [p.elevation for p in points],
-                "time": [p.time for p in points],
-            },
-        )
-
-        return Act(metadata=act_info, points=points)
-
-    @staticmethod
-    def info_from_gpx_track(track) -> dict[str]:
+def info_from_gpx_track(track) -> dict[str]:
         """Extract common metadata from a gpx_track"""
         act_info = dict()
         act_info["name"] = track.name
@@ -232,6 +193,30 @@ def load_one_gpx(filepath: str):
         gpx = gpxpy.parse(f, "lxml")
     if gpx.tracks and gpx.tracks[0].segments and gpx.tracks[0].segments[0].points:
         return gpx
+
+
+def load_fit(filepath: str):
+    """Load a fit-file."""
+
+    record_fields = {
+        "timestamp": "time",
+        "position_lat": "lat",
+        "position_long": "long",
+        "enhanced_speed": "speed_enh",
+        "enhanced_altitude": "alt_enh",
+        "heart_rate": "hr",
+    }
+
+    points = {k: [] for k in record_fields.keys()}
+    with fitdecode.FitReader(filepath, check_crc=fitdecode.CrcCheck.RAISE) as fit:
+        for frame in fit:
+            if frame.frame_type == fitdecode.FIT_FRAME_DATA:
+                if frame.name == "record":
+                    for field in frame:
+                        if field.name in record_fields.keys():
+                            points[field.name].append(field.value)
+    points_df = pd.DataFrame.from_dict(points).rename(columns=record_fields)
+    return points_df
 
 
 def eddington_nbr(act_index: dict) -> int:

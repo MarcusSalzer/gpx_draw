@@ -1,9 +1,7 @@
-
 import gpxpy
 import gpxpy.gpx
 from plotly import express as px, graph_objects as go, subplots as ps
 import pandas as pd
-
 
 
 def plot_one_gpx(gpx: gpxpy.gpx.GPX = None, show_grid=False) -> go.Figure:
@@ -25,7 +23,7 @@ def plot_one_gpx(gpx: gpxpy.gpx.GPX = None, show_grid=False) -> go.Figure:
         rows=2, cols=1, row_heights=[0.7, 0.3], subplot_titles=["Trace", "Altitude"]
     )
     fig.add_trace(go.Scatter(x=lon, y=lat), row=1, col=1)
-    fig.add_trace(go.Scatter(x=time, y=elev,fill="tozeroy"), row=2, col=1)
+    fig.add_trace(go.Scatter(x=time, y=elev, fill="tozeroy"), row=2, col=1)
     fig.update_layout(
         title=act_name + " (%.2f km)" % length_km,
         showlegend=False,

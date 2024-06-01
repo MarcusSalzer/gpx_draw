@@ -1,19 +1,33 @@
-
 import gpxpy
 import gpxpy.gpx
 import pandas as pd
-from plotly import express as px
+from plotly import express as px, graph_objects as go
 
 
 class Act:
     """Object representing an activity with one track and some metadata"""
 
+    __slots__ = (
+        "name",
+        "metadata",
+        "points",
+        "length2d",
+        "length3d",
+    )
+
     def __init__(
-        self, name: str, metadata: dict = None, points: pd.DataFrame = None
+        self,
+        name: str,
+        metadata: dict = None,
+        points: pd.DataFrame = None,
+        length2d: float = None,
+        length3d: float = None,
     ) -> None:
         self.name = name
         self.metadata = metadata
         self.points = points
+        self.length2d = length2d
+        self.length3d = length3d
 
     def __str__(self) -> str:
         lines = [self.name, str(len(self.points))]
@@ -46,16 +60,35 @@ class Act:
 
     def plot_trace(self, show_grid=False):
         """Plot a trace of the activity."""
-        fig = px.line(self.points, x="long", y="lat")
+        p = self.points
+
+        hov_tmp = "<br>".join(
+            [
+                "time: %{customdata[0]}",
+                "alt: %{customdata[1]} m",
+            ]
+        )
+        custom_data = [
+            p.time.map(lambda x: x.time()),
+            p.alt_enh.map(lambda x: "%.1f" % x),
+        ]
+
+        fig = px.line(
+            p,
+            x="long",
+            y="lat",
+            custom_data=custom_data,
+        ).update_traces(hovertemplate=hov_tmp)
 
         fig.update_layout(
             title=self.name,
             showlegend=False,
             dragmode="pan",
+            margin=dict(l=20, r=20, t=60, b=20),
         )
         fig.update_yaxes(scaleanchor="x", scaleratio=1)
 
-        fig.update_xaxes(showgrid=show_grid)
-        fig.update_yaxes(showgrid=show_grid)
+        fig.update_xaxes(showgrid=show_grid, visible=False)
+        fig.update_yaxes(showgrid=show_grid, visible=False)
 
         return fig

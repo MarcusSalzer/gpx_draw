@@ -1,5 +1,7 @@
+import gzip
 import json
 import os
+import shutil
 from datetime import date, datetime
 from glob import glob
 
@@ -9,7 +11,25 @@ import gpxpy.gpx
 import numpy as np
 import pandas as pd
 
-TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+def unzip_gz(folder: str, file: str, overwrite=False):
+    """Unzip a file and save a copy.
+    ## Parameters
+    - folder
+    - file
+    - overwrite (bool): If true, overwrite existing file with same name."""
+
+    assert file[-3:] == ".gz", "want .gz filename"
+
+    file_out = file[:-3]
+    if (file_out in os.listdir(folder)) and (not overwrite):
+        return False
+
+    with gzip.open(os.path.join(folder, file), "rb") as f_in:
+        with open(os.path.join(folder, file_out), "wb") as f_out:
+            shutil.copyfileobj(f_in, f_out)
+
+    return True
 
 
 def index_activities(folder: str, old_index=None, verbose=False) -> dict[str]:
@@ -196,7 +216,7 @@ def load_one_gpx(filepath: str):
 
 
 def load_fit(filepath: str):
-    """Load a fit-file.
+    """Load a .fit-file, or compressed .fit.gz-file.
 
     Extract point-wise data from data-message named "record".
 
@@ -213,19 +233,30 @@ def load_fit(filepath: str):
 
     points = {k: [] for k in record_fields.values()}
     info = {}
-    with fitdecode.FitReader(filepath, check_crc=fitdecode.CrcCheck.RAISE) as fit:
-        for frame in fit:
-            if frame.frame_type == fitdecode.FIT_FRAME_DATA:
-                if frame.name == "record":
-                    for k in record_fields.keys():
-                        points[record_fields[k]].append(frame.get_value(k, fallback=None))
-                elif frame.name == "sport":
-                    info["sport_name"] = frame.get_value("name")
-                    info["sport_main"] = frame.get_value("sport")
-                    info["sport_sub"] = frame.get_value("sub_sport")
 
-    points_df = pd.DataFrame.from_dict(points)
-    return points_df, info
+    # choose based on filetype
+    if filepath[-3:] == ".gz":
+        openfunc = gzip.open
+    else:
+        openfunc = open
+
+    with openfunc(filepath, "rb") as f:
+        with fitdecode.FitReader(f, check_crc=fitdecode.CrcCheck.RAISE) as fit:
+            for frame in fit:
+                # frame with data?
+                if frame.frame_type == fitdecode.FIT_FRAME_DATA:
+                    if frame.name == "record":
+                        for k in record_fields.keys():
+                            points[record_fields[k]].append(
+                                frame.get_value(k, fallback=None)
+                            )
+                    elif frame.name == "sport":
+                        info["sport_name"] = frame.get_value("name")
+                        info["sport_main"] = frame.get_value("sport")
+                        info["sport_sub"] = frame.get_value("sub_sport")
+
+        points_df = pd.DataFrame.from_dict(points)
+        return points_df, info
 
 
 def eddington_nbr(act_index: dict) -> int:

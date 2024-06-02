@@ -53,8 +53,6 @@ class Act:
 
         track = gpx.tracks[0]
 
-        # extract metadata
-        act_info = cls.info_from_gpx_track(track)
 
         points = gpx.tracks[0].segments[0].points
 
@@ -67,7 +65,7 @@ class Act:
             },
         )
 
-        return cls(metadata=act_info, points=points_df)
+        return cls(metadata=None, points=points_df)
 
     def plot_trace(self, show_grid=False) -> go.Figure:
         """Plot a trace of the activity."""

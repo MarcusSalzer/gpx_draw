@@ -13,11 +13,21 @@ class Act:
         "points",
         "length2d",
         "length3d",
+        "sport",
     )
+
+    # clas-level consts.
+
+    SPORTS = {
+        "running": ["trail"],
+        "cycling": ["road", "mtb"],
+        "hiking": [],
+    }
 
     def __init__(
         self,
         name: str,
+        sport: str = None,
         metadata: dict = None,
         points: pd.DataFrame = None,
         length2d: float = None,
@@ -28,6 +38,7 @@ class Act:
         self.points = points
         self.length2d = length2d
         self.length3d = length3d
+        self.sport = sport 
 
     def __str__(self) -> str:
         lines = [self.name, str(len(self.points))]
@@ -58,7 +69,7 @@ class Act:
 
         return cls(metadata=act_info, points=points_df)
 
-    def plot_trace(self, show_grid=False):
+    def plot_trace(self, show_grid=False) -> go.Figure:
         """Plot a trace of the activity."""
         p = self.points
 
@@ -78,17 +89,20 @@ class Act:
             x="long",
             y="lat",
             custom_data=custom_data,
-        ).update_traces(hovertemplate=hov_tmp)
-
+        )
+        fig.update_traces(hovertemplate=hov_tmp)
         fig.update_layout(
             title=self.name,
             showlegend=False,
             dragmode="pan",
             margin=dict(l=20, r=20, t=60, b=20),
         )
-        fig.update_yaxes(scaleanchor="x", scaleratio=1)
-
+        fig.update_yaxes(
+            scaleanchor="x",
+            scaleratio=1,
+            showgrid=show_grid,
+            visible=False,
+        )
         fig.update_xaxes(showgrid=show_grid, visible=False)
-        fig.update_yaxes(showgrid=show_grid, visible=False)
 
         return fig

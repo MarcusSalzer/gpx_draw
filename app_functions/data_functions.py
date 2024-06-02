@@ -68,20 +68,20 @@ def index_activities(folder: str, old_index=None, verbose=False) -> dict[str]:
 
 
 def info_from_gpx_track(track) -> dict[str]:
-        """Extract common metadata from a gpx_track"""
-        act_info = dict()
-        act_info["name"] = track.name
-        act_info["desc"] = track.description
-        act_info["comment"] = track.comment
-        act_info["type"] = track.type
-        act_info["source"] = track.source
-        act_info["n_points"] = len(track.segments[0].points)
-        act_info["length2d_m"] = track.length_2d()  # lat,long-length [m]
-        act_info["length3d_m"] = track.length_3d()  # lat,long,elev-length [m]
+    """Extract common metadata from a gpx_track"""
+    act_info = dict()
+    act_info["name"] = track.name
+    act_info["desc"] = track.description
+    act_info["comment"] = track.comment
+    act_info["type"] = track.type
+    act_info["source"] = track.source
+    act_info["n_points"] = len(track.segments[0].points)
+    act_info["length2d_m"] = track.length_2d()  # lat,long-length [m]
+    act_info["length3d_m"] = track.length_3d()  # lat,long,elev-length [m]
 
-        act_info["time_start"] = track.get_time_bounds().start_time
-        act_info["time_end"] = track.get_time_bounds().end_time
-        return act_info
+    act_info["time_start"] = track.get_time_bounds().start_time
+    act_info["time_end"] = track.get_time_bounds().end_time
+    return act_info
 
 
 def check_index(act_index: dict):
@@ -196,7 +196,11 @@ def load_one_gpx(filepath: str):
 
 
 def load_fit(filepath: str):
-    """Load a fit-file."""
+    """Load a fit-file.
+
+    Extract point-wise data from data-message named "record".
+
+    """
 
     record_fields = {
         "timestamp": "time",
@@ -207,16 +211,21 @@ def load_fit(filepath: str):
         "heart_rate": "hr",
     }
 
-    points = {k: [] for k in record_fields.keys()}
+    points = {k: [] for k in record_fields.values()}
+    info = {}
     with fitdecode.FitReader(filepath, check_crc=fitdecode.CrcCheck.RAISE) as fit:
         for frame in fit:
             if frame.frame_type == fitdecode.FIT_FRAME_DATA:
                 if frame.name == "record":
-                    for field in frame:
-                        if field.name in record_fields.keys():
-                            points[field.name].append(field.value)
-    points_df = pd.DataFrame.from_dict(points).rename(columns=record_fields)
-    return points_df
+                    for k in record_fields.keys():
+                        points[record_fields[k]].append(frame.get_value(k, fallback=None))
+                elif frame.name == "sport":
+                    info["sport_name"] = frame.get_value("name")
+                    info["sport_main"] = frame.get_value("sport")
+                    info["sport_sub"] = frame.get_value("sub_sport")
+
+    points_df = pd.DataFrame.from_dict(points)
+    return points_df, info
 
 
 def eddington_nbr(act_index: dict) -> int:

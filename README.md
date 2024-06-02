@@ -13,6 +13,8 @@ Here we are working on a gpx visualization and activity statistics app.
 
 - Data
     - import FIT
+        - Interesting to find common keys to store as metadata?
+    - aliases to standardize sport names
 - Summary
     - timeframes: weekly, monthly, yearly, all time
     - interesting stats:

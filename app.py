@@ -1,6 +1,5 @@
 ## try making a small dash app
 
-
 import os
 
 import dash_bootstrap_components as dbc
@@ -10,14 +9,23 @@ from dash_bootstrap_templates import load_figure_template
 import app_functions.data_functions as dataf
 import app_functions.plot_functions as plotf
 import app_functions.ui_functions as uif
-from app_functions.ui_functions import make_activity_list, make_main_greeting, make_settings
+from app_functions.ui_functions import (
+    make_activity_list,
+    make_main_greeting,
+    make_settings,
+)
+
+PLOT_CONFIG = {
+    "scrollZoom": True,
+    "displaylogo": False,
+    "modeBarButtonsToRemove": ["select", "autoScale"],
+}
+
 
 activity_index = dataf.load_act_index(os.path.join("data", "activity_index.json"))
 
 
-# loads the "darkly" template and sets it as the default
-load_figure_template("darkly")
-app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.themes.DARKLY])
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 info_md = make_main_greeting(activity_index)
 main_sum_plot = plotf.summary_plot(activity_index)
@@ -25,6 +33,7 @@ main_sum_plot = plotf.summary_plot(activity_index)
 activity_list = make_activity_list(activity_index)
 
 
+# find latest activity to show it
 latest_act_file = max(
     activity_index["activities"],
     key=lambda act: activity_index["activities"][act]["time_start"],
@@ -40,7 +49,7 @@ row1 = dbc.Row(
                 dcc.Graph(
                     id="fig-act-overview",
                     figure=overview_fig,
-                    config={"scrollZoom": True},
+                    config=PLOT_CONFIG,
                 ),
                 type="default",
             ),

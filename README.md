@@ -15,6 +15,7 @@ Here we are working on a gpx visualization and activity statistics app.
     - import FIT
         - Interesting to find common keys to store as metadata?
     - aliases to standardize sport names
+    - NaN in json (problem?)
 - Summary
     - timeframes: weekly, monthly, yearly, all time
     - interesting stats:

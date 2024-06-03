@@ -23,7 +23,7 @@ load_figure_template(["minty", "minty_dark"])
 SETTINGS_PATH = os.path.join("data", "settings.json")
 
 activity_index = dataf.load_act_index(os.path.join("data", "activity_index.json"))
-settings_dict = dataf.load_settings(SETTINGS_PATH)
+settings_dict = dataf.load_json(SETTINGS_PATH)
 
 
 def make_main_greeting(act_index: dict = None) -> dcc.Markdown:

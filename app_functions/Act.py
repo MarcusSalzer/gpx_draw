@@ -38,7 +38,7 @@ class Act:
         self.points = points
         self.length2d = length2d
         self.length3d = length3d
-        self.sport = sport 
+        self.sport = sport
 
     def __str__(self) -> str:
         lines = [self.name, str(len(self.points))]
@@ -53,7 +53,6 @@ class Act:
 
         track = gpx.tracks[0]
 
-
         points = gpx.tracks[0].segments[0].points
 
         points_df = pd.DataFrame.from_dict(
@@ -66,6 +65,21 @@ class Act:
         )
 
         return cls(metadata=None, points=points_df)
+
+    @classmethod
+    def from_dict(cls, d: dict):
+        assert set(d.keys()) == set(cls.__slots__), "Invalid keys"
+        act = Act(name=d["name"])
+        for s in cls.__slots__:
+            setattr(act, s, d[s])
+
+        # TODO: PARSE POINTS AS DF: DATETIMES!
+        return act
+
+    def to_dict(self) -> dict:
+        """Return activity as a dict"""
+        d = {s: getattr(self, s, None) for s in self.__slots__}
+        return d
 
     def plot_trace(self, show_grid=False) -> go.Figure:
         """Plot a trace of the activity."""

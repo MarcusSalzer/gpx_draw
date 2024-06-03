@@ -6,7 +6,7 @@ ACT_DIR = os.path.join("data", "activities_small")
 index_path = os.path.join("data", "activity_index.json")
 
 # act_index = dataf.index_activities(ACT_DIR, None, verbose=False)
-# dataf.save_act_index(index_path, act_index)
+# dataf.save_json(index_path, act_index)
 
 act_index = dataf.load_act_index(index_path)
 acts = act_index["activities"]

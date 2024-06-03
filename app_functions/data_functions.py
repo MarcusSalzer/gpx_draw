@@ -139,6 +139,8 @@ def serialize_json(obj):
     """Create resonable serializations for datatypes used here."""
     if isinstance(obj, (datetime, date)):
         return obj.isoformat()
+    if isinstance(obj, pd.DataFrame):
+        return obj.to_dict(orient="dict")
     raise TypeError("cannot serialize object (%s)" % type(obj))
 
 
@@ -166,15 +168,28 @@ def load_act_index(filepath) -> dict:
     return act_index
 
 
-def save_act_index(filepath, act_index):
-    """Save activity index as JSON."""
+def save_json(filepath, obj):
+    """Save object as JSON."""
     with open(filepath, mode="w", encoding="utf8") as f:
-        json.dump(act_index, f, default=serialize_json, indent=4)
+        json.dump(obj, f, default=serialize_json, indent=0)
 
 
-def load_settings(filepath: str) -> dict:
-    with open(filepath) as f:
-        return json.load(f)
+def save_json_gz(filepath, obj):
+    """Save object as JSON.gz"""
+    json_bytes = json.dumps(obj, default=serialize_json).encode("utf-8")
+    with gzip.open(filepath, mode="w") as f:
+        f.write(json_bytes)
+
+
+def load_json(filepath: str, enc="utf8") -> dict:
+    """Load..."""
+    # choose based on filetype
+    if filepath[-3:] == ".gz":
+        with gzip.open(filepath) as f:
+            return json.load(f)
+    else:
+        with open(filepath, encoding=enc) as f:
+            return json.load(f)
 
 
 def save_settings(filepath: str, settings_dict: dict):

@@ -26,7 +26,7 @@ class Act:
 
     def __init__(
         self,
-        name: str,
+        name: str = None,
         sport: str = None,
         metadata: dict = None,
         points: pd.DataFrame = None,
@@ -41,9 +41,7 @@ class Act:
         self.sport = sport
 
     def __str__(self) -> str:
-        lines = [self.name, str(len(self.points))]
-
-        return "\n".join(lines)
+        return f"Act: {self.name}, {len(self.points)} points"
 
     @classmethod
     def from_gpxpy(cls, gpx: gpxpy.gpx.GPX):
@@ -69,11 +67,16 @@ class Act:
     @classmethod
     def from_dict(cls, d: dict):
         assert set(d.keys()) == set(cls.__slots__), "Invalid keys"
-        act = Act(name=d["name"])
-        for s in cls.__slots__:
-            setattr(act, s, d[s])
+        act = Act()
 
-        # TODO: PARSE POINTS AS DF: DATETIMES!
+        for s in cls.__slots__:
+            if s == "points":
+                df = pd.DataFrame.from_dict(d[s])
+                df["time"] = pd.to_datetime(df["time"])
+                df.reset_index(drop=True, inplace=True)
+                setattr(act, s, df)
+            else:
+                setattr(act, s, d[s])
         return act
 
     def to_dict(self) -> dict:

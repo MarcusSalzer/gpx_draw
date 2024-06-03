@@ -2,7 +2,6 @@ import gzip
 import json
 import os
 import shutil
-from datetime import date, datetime
 from glob import glob
 
 import fitdecode
@@ -81,7 +80,7 @@ def index_activities(folder: str, old_index=None, verbose=False) -> dict[str]:
         print(f"indexed file {i+1}/{len(filenames)}.")
 
     # add metadata to index
-    now = datetime.now()
+    now = pd.Timestamp.now()
     act_index["created"] = now
     act_index["updated"] = now
     return act_index
@@ -111,7 +110,7 @@ def check_index(act_index: dict):
 
     info.append("index created : %s" % act_index["created"])
     info.append("index updated : %s" % act_index["updated"])
-    info.append("since update  : %s" % (datetime.now() - act_index["updated"]))
+    info.append("since update  : %s" % (pd.Timestamp.now() - act_index["updated"]))
 
     acts = act_index["activities"]
     duplicates = find_duplicates(acts)
@@ -137,7 +136,7 @@ def find_duplicates(acts: dict):
 
 def serialize_json(obj):
     """Create resonable serializations for datatypes used here."""
-    if isinstance(obj, (datetime, date)):
+    if isinstance(obj, pd.Timestamp):
         return obj.isoformat()
     if isinstance(obj, pd.DataFrame):
         return obj.to_dict(orient="dict")
@@ -155,14 +154,14 @@ def load_act_index(filepath) -> dict:
         act_index = json.load(f)
 
     # convert to datetime
-    act_index["updated"] = datetime.fromisoformat(act_index["updated"])
-    act_index["created"] = datetime.fromisoformat(act_index["created"])
+    act_index["updated"] = pd.Timestamp(act_index["updated"])
+    act_index["created"] = pd.Timestamp(act_index["created"])
 
     for k in act_index["activities"].keys():
-        act_index["activities"][k]["time_start"] = datetime.fromisoformat(
+        act_index["activities"][k]["time_start"] = pd.Timestamp(
             act_index["activities"][k]["time_start"]
         )
-        act_index["activities"][k]["time_end"] = datetime.fromisoformat(
+        act_index["activities"][k]["time_end"] = pd.Timestamp(
             act_index["activities"][k]["time_end"]
         )
     return act_index
@@ -271,6 +270,7 @@ def load_fit(filepath: str):
                         info["sport_sub"] = frame.get_value("sub_sport")
 
         points_df = pd.DataFrame.from_dict(points)
+        points_df["time"] = pd.to_datetime(points_df["time"])
         return points_df, info
 
 

@@ -4,7 +4,6 @@ import os
 
 import dash_bootstrap_components as dbc
 from dash import Dash, dcc, html
-from dash_bootstrap_templates import load_figure_template
 
 import app_functions.data_functions as dataf
 import app_functions.plot_functions as plotf

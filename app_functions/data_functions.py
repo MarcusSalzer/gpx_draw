@@ -296,3 +296,8 @@ def eddington_nbr(act_index: dict) -> int:
         if d >= i + 1:
             E = i + 1
     return E
+
+
+def find_importable(folder: str):
+    """Find all files that could be imported as activities."""
+    

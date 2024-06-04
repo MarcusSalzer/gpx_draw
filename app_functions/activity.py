@@ -121,3 +121,5 @@ class Act:
         fig.update_xaxes(showgrid=show_grid, visible=False)
 
         return fig
+
+

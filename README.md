@@ -16,13 +16,14 @@ Here we are working on a gpx visualization and activity statistics app.
         - Interesting to find common keys to store as metadata?
     - aliases to standardize sport names
     - NaN in json (problem?)
+    - Even faster with `polars`?
 - Summary
     - timeframes: weekly, monthly, yearly, all time
     - interesting stats:
         - cumulative distance (per type?)
         - altitude gain
 - Activities
-    - show activity type
+    - show activity type, dropdown: filter by sport
 - Settings
     - enable animation
     - color theme

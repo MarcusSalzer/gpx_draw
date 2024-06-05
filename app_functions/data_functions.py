@@ -1,3 +1,4 @@
+import fnmatch
 import gzip
 import json
 import os
@@ -10,6 +11,8 @@ import gpxpy.gpx
 import numpy as np
 import pandas as pd
 
+IMPORT_TYPES = [".gpx", ".gpx.gz", ".fit", ".fit.gz", ".json", ".json.gz"]
+
 
 def unzip_gz(folder: str, file: str, overwrite=False):
     """Unzip a file and save a copy.
@@ -20,7 +23,7 @@ def unzip_gz(folder: str, file: str, overwrite=False):
 
     assert file[-3:] == ".gz", "want .gz filename"
 
-    file_out = file[:-3]
+    file_out = file[:-3]  # remove .gz extension
     if (file_out in os.listdir(folder)) and (not overwrite):
         return False
 
@@ -298,6 +301,14 @@ def eddington_nbr(act_index: dict) -> int:
     return E
 
 
-def find_importable(folder: str):
+def find_importable(folder: str, extensions=IMPORT_TYPES):
     """Find all files that could be imported as activities."""
-    
+
+    matches = []
+    for root, dirnames, filenames in os.walk(folder):
+        for extension in extensions:
+            for filename in fnmatch.filter(filenames, f"*{extension}"):
+                file_path = os.path.join(root, filename)
+                file_size = os.path.getsize(file_path)
+                matches.append((file_path, file_size, extension))
+    return pd.DataFrame(sorted(matches), columns=["path", "size", "type"])

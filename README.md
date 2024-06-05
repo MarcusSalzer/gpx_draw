@@ -17,6 +17,7 @@ Here we are working on a gpx visualization and activity statistics app.
     - aliases to standardize sport names
     - NaN in json (problem?)
     - Even faster with `polars`?
+    - import activity from (naive but reasonable) XML file?
 - Summary
     - timeframes: weekly, monthly, yearly, all time
     - interesting stats:

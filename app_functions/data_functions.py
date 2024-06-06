@@ -11,6 +11,8 @@ import gpxpy.gpx
 import numpy as np
 import pandas as pd
 
+from app_functions.activity import Act
+
 IMPORT_TYPES = [".gpx", ".gpx.gz", ".fit", ".fit.gz", ".json", ".json.gz"]
 
 
@@ -171,16 +173,20 @@ def load_act_index(filepath) -> dict:
 
 
 def save_json(filepath, obj):
-    """Save object as JSON."""
-    with open(filepath, mode="w", encoding="utf8") as f:
-        json.dump(obj, f, default=serialize_json, indent=0)
+    """Save object as JSON.
 
+    ## Parameters
+    - filepath (str): destination file. Will be compressed if ends with '.gz'."""
 
-def save_json_gz(filepath, obj):
-    """Save object as JSON.gz"""
-    json_bytes = json.dumps(obj, default=serialize_json).encode("utf-8")
-    with gzip.open(filepath, mode="w") as f:
-        f.write(json_bytes)
+    if filepath[-3:] == ".gz":
+        json_bytes = json.dumps(obj, default=serialize_json).encode("utf-8")
+        with gzip.open(filepath, mode="w") as f:
+            f.write(json_bytes)
+    else:
+        with open(filepath, mode="w", encoding="utf8") as f:
+            json.dump(obj, f, default=serialize_json, indent=0)
+
+    return True
 
 
 def load_json(filepath: str, enc="utf8") -> dict:
@@ -237,6 +243,8 @@ def load_fit(filepath: str):
 
     Extract point-wise data from data-message named "record".
 
+    ## Returns
+    - act_dict (dict): dict of activity data (no processing or datatypes converted)
     """
 
     record_fields = {
@@ -249,7 +257,7 @@ def load_fit(filepath: str):
     }
 
     points = {k: [] for k in record_fields.values()}
-    info = {}
+    act_dict = {}
 
     # choose based on filetype
     if filepath[-3:] == ".gz":
@@ -268,13 +276,13 @@ def load_fit(filepath: str):
                                 frame.get_value(k, fallback=None)
                             )
                     elif frame.name == "sport":
-                        info["sport_name"] = frame.get_value("name")
-                        info["sport_main"] = frame.get_value("sport")
-                        info["sport_sub"] = frame.get_value("sub_sport")
+                        sport_name = frame.get_value("name")
+                        sport_main = frame.get_value("sport")
+                        sport_sub = frame.get_value("sub_sport")
+                        act_dict["sport"] = [sport_name, sport_main, sport_sub]
+        act_dict["points"] = points
 
-        points_df = pd.DataFrame.from_dict(points)
-        points_df["time"] = pd.to_datetime(points_df["time"])
-        return points_df, info
+        return act_dict
 
 
 def eddington_nbr(act_index: dict) -> int:
@@ -312,3 +320,60 @@ def find_importable(folder: str, extensions=IMPORT_TYPES):
                 file_size = os.path.getsize(file_path)
                 matches.append((file_path, file_size, extension))
     return pd.DataFrame(sorted(matches), columns=["path", "size", "type"])
+
+
+def convert_activity_json(
+    filepath: str,
+    folder_out: str,
+    overwrite=False,
+    compress=False,
+):
+    """Load activity file and save as JSON.
+
+    ## Parameters
+    - filepath (str): path to file (.fit, .fit.gz) #TODO GPX?
+    - output_folder (str): destination folder
+    - overwrite (bool): If true, convert and overwrite existing files
+    - compress (bool): If true, save as a compressed .json.gz file
+    - verbose (bool)
+
+    ## Returns
+    - completed (bool): transaction completed
+    """
+
+    name, extension = os.path.split(filepath)[-1].split(".", maxsplit=1)
+
+    if compress:
+        extension_out = ".json.gz"
+    else:
+        extension_out = ".json"
+
+    path_out = os.path.join(folder_out, name + extension_out)
+
+    # Check if already exists
+    if (not overwrite) and os.path.exists(path_out):
+        return False
+
+    act = Act.from_dict(load_fit(filepath))
+    save_json(filepath=path_out, obj=act.to_dict())
+    return True
+
+
+# TODO: include indexing here?
+def convert_all_activities_json(
+    folder_in: str, folder_out: str, overwrite=False, compress=False, verbose=False
+):
+    """Convert all activities in the folder to json"""
+
+    files = find_importable(folder_in, extensions=[".fit", ".fit.gz"])["path"]
+
+    if verbose:
+        print("found files", len(files))
+
+    for i, file in enumerate(files):
+        converted = convert_activity_json(file, folder_out, overwrite, compress)
+        if verbose:
+            if converted:
+                print(i, "Convert", file)
+            else:
+                print(i, "Skip   ", file)

@@ -6,13 +6,11 @@ import os
 act_dir = "data_test"
 
 file = "10022032783.fit.gz"
-p, sp = dataf.load_fit(os.path.join(act_dir, file))
-act = Act("TEST", points=p, sport=sp["sport_main"])
+act_dict = dataf.load_fit(os.path.join(act_dir, file))
+act = Act.from_dict(act_dict)
 
 dataf.save_json(filepath=os.path.join(act_dir, "10022032783.json"), obj=act.to_dict())
-# dataf.save_json_gz(
-#     filepath=os.path.join(act_dir, "10022032783.json.gz"), obj=act.to_dict()
-# )
+
 
 loaded = dataf.load_json(filepath=os.path.join(act_dir, "10022032783.json"))
 
@@ -26,5 +24,18 @@ for s in Act.__slots__:
     else:
         print(s, act.points.equals(act_loaded.points))
 
-print("\nEQUAL OBJECTS?", act == act_loaded) 
+print("\nEQUAL OBJECTS?", act == act_loaded)
 
+print("===")
+print(act.sport)
+print("===")
+print(act_loaded.sport)
+
+
+converted = dataf.convert_activity_json(
+    filepath=os.path.join(act_dir, file),
+    folder_out="data_test/act_json",
+    overwrite=False,
+    compress=True,
+)
+print("converted file:", converted)

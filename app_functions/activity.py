@@ -80,17 +80,17 @@ class Act:
 
     @classmethod
     def from_dict(cls, d: dict):
-        assert set(d.keys()) == set(cls.__slots__), "Invalid keys"
+        assert set(d.keys()).issubset(cls.__slots__), f"Invalid keys:{d.keys()}"
         act = Act()
 
-        for s in cls.__slots__:
-            if s == "points":
-                df = pd.DataFrame.from_dict(d[s])
-                df["time"] = pd.to_datetime(df["time"])
-                df.reset_index(drop=True, inplace=True)
-                setattr(act, s, df)
+        for k in d.keys():
+            if k == "points":
+                df_points = pd.DataFrame.from_dict(d[k])
+                df_points["time"] = pd.to_datetime(df_points["time"])
+                df_points.reset_index(drop=True, inplace=True)
+                setattr(act, k, df_points)
             else:
-                setattr(act, s, d[s])
+                setattr(act, k, d[k])
         return act
 
     def to_dict(self) -> dict:

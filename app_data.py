@@ -17,6 +17,8 @@ lines = [f"{k} : {file_counts[k]}" for k in file_counts.index]
 
 div = dcc.Markdown(children="## Found \n\n" + "\n\n".join(lines))
 
+
+
 app.layout = div
 
 if __name__ == "__main__":

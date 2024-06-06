@@ -27,3 +27,6 @@ for s in Act.__slots__:
         print(s, act.points.equals(act_loaded.points))
 
 print("\nEQUAL OBJECTS?", act == act_loaded) #TODO Implement object equality?
+
+print(str(act))
+print(str(act_loaded))

@@ -40,6 +40,20 @@ class Act:
         self.length3d = length3d
         self.sport = sport
 
+    def __repr__(self) -> str:
+        return ", ".join((f"{s}={getattr(self,s)}" for s in self.__slots__))
+
+    def __eq__(self, obj: object) -> bool:
+        if not isinstance(obj, Act):
+            return NotImplemented
+        for s in self.__slots__:
+            if isinstance(getattr(self, s), pd.DataFrame):
+                if not getattr(self, s).equals(getattr(obj, s)):
+                    return False
+            elif getattr(self, s) != getattr(obj, s):
+                return False
+        return True
+
     def __str__(self) -> str:
         return f"Act: {self.name}, {len(self.points)} points"
 
@@ -51,7 +65,7 @@ class Act:
 
         track = gpx.tracks[0]
 
-        points = gpx.tracks[0].segments[0].points
+        points = track.segments[0].points
 
         points_df = pd.DataFrame.from_dict(
             {
@@ -121,5 +135,3 @@ class Act:
         fig.update_xaxes(showgrid=show_grid, visible=False)
 
         return fig
-
-

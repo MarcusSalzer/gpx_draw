@@ -1,4 +1,4 @@
-from app_functions.Act import Act
+from app_functions.activity import Act
 
 from app_functions import data_functions as dataf
 import os

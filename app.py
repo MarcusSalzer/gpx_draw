@@ -4,16 +4,11 @@ import os
 
 import dash_bootstrap_components as dbc
 from dash import Dash, dcc, html
-from dash_bootstrap_templates import load_figure_template
 
 import app_functions.data_functions as dataf
 import app_functions.plot_functions as plotf
 import app_functions.ui_functions as uif
-from app_functions.ui_functions import (
-    make_activity_list,
-    make_main_greeting,
-    make_settings,
-)
+
 
 PLOT_CONFIG = {
     "scrollZoom": True,
@@ -27,10 +22,10 @@ activity_index = dataf.load_act_index(os.path.join("data", "activity_index.json"
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-info_md = make_main_greeting(activity_index)
+info_md = uif.make_main_greeting(activity_index)
 main_sum_plot = plotf.summary_plot(activity_index)
 
-activity_list = make_activity_list(activity_index)
+activity_list = uif.make_activity_list(activity_index)
 
 
 # find latest activity to show it
@@ -57,9 +52,8 @@ row1 = dbc.Row(
         dbc.Col(html.Div(children=activity_list)),
     ]
 )
-# row2 = dbc.Row(dcc.Markdown(children="Something...", id="changed"))
 
-settings_page = make_settings()
+settings_page = uif.make_settings()
 
 
 tabs = dcc.Tabs(

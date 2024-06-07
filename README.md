@@ -23,6 +23,8 @@ Here we are working on a gpx visualization and activity statistics app.
     - interesting stats:
         - cumulative distance (per type?)
         - altitude gain
+- Plotting
+    - Map projection, will lat/long be distorted?
 - Activities
     - show activity type, dropdown: filter by sport
 - Settings

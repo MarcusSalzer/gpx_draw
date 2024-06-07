@@ -25,6 +25,7 @@ def find_files_glob(folder, extensions):
 N_test = 10
 os_time = timeit(lambda: find_files_fnmatch(folder, extensions), number=N_test) / N_test
 glob_time = timeit(lambda: find_files_glob(folder, extensions), number=N_test) / N_test
+print("time listdir", timeit(lambda: os.listdir(folder), number=N_test) / N_test)
 
 print(f"fnmatch time: {os_time:.6f} seconds")
 print(f"glob time: {glob_time:.6f} seconds")
@@ -40,3 +41,4 @@ print()
 
 print(find_files_fnmatch(folder, extensions).type.value_counts())
 print(find_files_glob(folder, extensions).type.value_counts())
+

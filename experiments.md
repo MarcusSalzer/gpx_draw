@@ -11,7 +11,6 @@ We want to find a convenient format for loading data. It should be fast so that 
 In order to find files for import we search a directory and its sub-directories. The test directory contains 1495 files of 4 different types. Two methods compared:
 
 -   `fnmatch` : 69ms
-
 -   `glob` : 91ms
 
 ### Load single activity
@@ -28,6 +27,8 @@ Comparison of file formats for the activity "10022032783", average of 10 trials.
 | `.json.gz` | 106kB     | 10ms      |           |
 
 **Conclusion**: `json` file (especially compressed) looks promising.
+
+### Loading many activities
 
 ### Conversions
 

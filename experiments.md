@@ -17,7 +17,7 @@ In order to find files for import we search a directory and its sub-directories.
 
 Comparison of file formats for the activity "10022032783", average of 10 trials.
 
--   Note: `json` version here only contains points (6 dimensional) and a few string fields
+-   Note: `.json` version here only contains points (6 dimensional) and a few string fields, whereas the `.fit` contains more metadata.
 
 | Format     | File size | Load time | Save time |
 |------------|-----------|-----------|-----------|
@@ -43,6 +43,6 @@ Loading time for 1100 activities (a total of 1 862 000 points)
 
 ### Conversions
 
-The activity data is handled as `Act` objects, these can be created from, or converted to a `dict`.
+The activity data is handled as one index containing metadata for all activities, and one data frame of points for each activity.
 
 ## Indexing

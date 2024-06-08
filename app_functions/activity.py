@@ -80,13 +80,17 @@ class Act:
 
     @classmethod
     def from_dict(cls, d: dict):
+        """Create Act object from a dict.
+
+        Converts the time column to datetime, which is a little slow."""
+
         assert set(d.keys()).issubset(cls.__slots__), f"Invalid keys:{d.keys()}"
         act = Act()
 
         for k in d.keys():
             if k == "points":
                 df_points = pd.DataFrame.from_dict(d[k])
-                df_points["time"] = pd.to_datetime(df_points["time"])
+                df_points["time"] = pd.to_datetime(df_points["time"], cache=True)
                 df_points.reset_index(drop=True, inplace=True)
                 setattr(act, k, df_points)
             else:

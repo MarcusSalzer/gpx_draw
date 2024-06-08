@@ -10,6 +10,7 @@ import gpxpy
 import gpxpy.gpx
 import numpy as np
 import pandas as pd
+import msgspec.json
 
 from app_functions.activity import Act
 

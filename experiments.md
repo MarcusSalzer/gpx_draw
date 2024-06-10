@@ -33,7 +33,7 @@ Comparison of file formats for the activity "10022032783", average of 10 trials.
 Loading time for 1100 activities (a total of 1 862 000 points)
 
 | format                                   | total file size | load time | save time |
-|---------------------------|---------------|---------------|---------------|
+|------------------------|----------------|----------------|----------------|
 | 1100 `.json` files                       | 220 MB          | 5s        | 24s       |
 | 1100 `.json.gz` files                    | 41 MB           | 6s        | 54s       |
 | 1100 `.json` files (pandas, points only) | 151 MB          | 9s        | 13s       |

@@ -8,9 +8,10 @@ from glob import glob
 import fitdecode
 import gpxpy
 import gpxpy.gpx
+import msgspec.json
 import numpy as np
 import pandas as pd
-import msgspec.json
+import polars as pl
 
 from app_functions.activity import Act
 
@@ -242,10 +243,12 @@ def load_one_gpx(filepath: str):
 def load_fit(filepath: str):
     """Load a .fit-file, or compressed .fit.gz-file.
 
+    - act_dict (dict): dict of activity data (no processing or datatypes converted)
     Extract point-wise data from data-message named "record".
 
     ## Returns
-    - act_dict (dict): dict of activity data (no processing or datatypes converted)
+    - metadata (dict)
+    - points (dict)
     """
 
     record_fields = {
@@ -258,7 +261,7 @@ def load_fit(filepath: str):
     }
 
     points = {k: [] for k in record_fields.values()}
-    act_dict = {}
+    metadata = {}
 
     # choose based on filetype
     if filepath[-3:] == ".gz":
@@ -280,10 +283,9 @@ def load_fit(filepath: str):
                         sport_name = frame.get_value("name")
                         sport_main = frame.get_value("sport")
                         sport_sub = frame.get_value("sub_sport")
-                        act_dict["sport"] = [sport_name, sport_main, sport_sub]
-        act_dict["points"] = points
+                        metadata["sport"] = [sport_name, sport_main, sport_sub]
 
-        return act_dict
+        return metadata, points
 
 
 def eddington_nbr(act_index: dict) -> int:
@@ -314,7 +316,7 @@ def find_importable(folder: str, extensions=IMPORT_TYPES):
     """Find all files that could be imported as activities."""
 
     matches = []
-    for root, dirnames, filenames in os.walk(folder):
+    for root, _, filenames in os.walk(folder):
         for extension in extensions:
             for filename in fnmatch.filter(filenames, f"*{extension}"):
                 file_path = os.path.join(root, filename)
@@ -323,7 +325,7 @@ def find_importable(folder: str, extensions=IMPORT_TYPES):
     return pd.DataFrame(sorted(matches), columns=["path", "size", "type"])
 
 
-def convert_activity_json(
+def convert_fit_json(
     filepath: str,
     folder_out: str,
     overwrite=False,
@@ -355,9 +357,41 @@ def convert_activity_json(
     if (not overwrite) and os.path.exists(path_out):
         return False
 
-    act = Act.from_dict(load_fit(filepath))
+    metadata, points = load_fit(filepath)
+    act = Act.from_dict(metadata.update({"points": points}))
     save_json(filepath=path_out, obj=act.to_dict())
     return True
+
+
+def convert_fit_polars(filepath):
+    """TODO"""
+
+    act_id = os.path.split(filepath)[-1].split(".")[0]
+    metadata, points = load_fit(filepath)
+
+    N_points = len(points["time"])
+
+    points = pl.DataFrame(points)
+    points = points.with_columns(points["hr"].cast(pl.UInt16))
+    return metadata, points
+
+
+def convert_all_fit_polars(
+    folder_in: str, folder_out: str, overwrite=False, verbose=True
+):
+    files = find_importable(folder_in, extensions=[".fit", ".fit.gz"])["path"]
+    for i, fp in enumerate(files):
+        act_id = os.path.split(fp)[-1].split(".")[0]
+        path_out = os.path.join(folder_out, act_id + ".parquet")
+
+        skip = False
+        if (not overwrite) and os.path.exists(path_out):
+            skip = True
+
+        print(f"{i+1:5d}/{len(files)}: {act_id}", "(skip)" * skip)
+        if not skip:
+            metadata, points = convert_fit_polars(fp)
+            points.write_parquet(path_out)
 
 
 # TODO: include indexing here?
@@ -372,7 +406,7 @@ def convert_all_activities_json(
         print("found files", len(files))
 
     for i, file in enumerate(files):
-        converted = convert_activity_json(file, folder_out, overwrite, compress)
+        converted = convert_fit_json(file, folder_out, overwrite, compress)
         if verbose:
             if converted:
                 print(i, "Convert", file)

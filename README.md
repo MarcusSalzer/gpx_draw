@@ -15,9 +15,9 @@ Here we are working on a gpx visualization and activity statistics app.
     - import FIT
         - Interesting to find common keys to store as metadata?
     - aliases to standardize sport names
-    - NaN in json (problem?)
     - Even faster? polars, msgspec, dask, etc etc,
     - import activity from (naive but reasonable) XML file?
+    - safer parquet write (tmp file + os replace?)
 - Summary
     - timeframes: weekly, monthly, yearly, all time
     - interesting stats:

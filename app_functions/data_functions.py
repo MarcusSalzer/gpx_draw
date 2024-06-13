@@ -15,7 +15,17 @@ import polars as pl
 
 from app_functions.activity import Act
 
+# CONSTANTS
+
 IMPORT_TYPES = [".gpx", ".gpx.gz", ".fit", ".fit.gz", ".json", ".json.gz"]
+DEF_PL_PARQ_SCH = {
+    "time": pl.Datetime(time_unit="us", time_zone="UTC"),
+    "lat": pl.Null,
+    "long": pl.Null,
+    "speed_enh": pl.Null,
+    "alt_enh": pl.Null,
+    "hr": pl.UInt16,
+}
 
 
 def unzip_gz(folder: str, file: str, overwrite=False):
@@ -38,7 +48,7 @@ def unzip_gz(folder: str, file: str, overwrite=False):
     return True
 
 
-def index_activities(folder: str, old_index=None, verbose=False) -> dict[str]:
+def index_activities_gpx(folder: str, old_index=None, verbose=False) -> dict[str]:
     """Create or update(TODO) a index of all gpx-files in activities folder.
 
     The index is a dict indexed by ``id``, containing dicts with basic information.
@@ -172,6 +182,14 @@ def load_act_index(filepath) -> dict:
             act_index["activities"][k]["time_end"]
         )
     return act_index
+
+def load_parquet_acts(filepaths):
+    all_acts = {}
+    for fp in filepaths:
+        id = os.path.split(fp)[-1].split(".")[0]
+        all_acts[id] = pl.read_parquet(fp)
+
+    return all_acts
 
 
 def save_json(filepath, obj):
@@ -319,10 +337,13 @@ def find_importable(folder: str, extensions=IMPORT_TYPES):
     for root, _, filenames in os.walk(folder):
         for extension in extensions:
             for filename in fnmatch.filter(filenames, f"*{extension}"):
+                name = filename.split(".")[0]
                 file_path = os.path.join(root, filename)
                 file_size = os.path.getsize(file_path)
-                matches.append((file_path, file_size, extension))
-    return pd.DataFrame(sorted(matches), columns=["path", "size", "type"])
+                matches.append((name, file_path, file_size, extension))
+    df = pl.DataFrame(matches)
+    df.columns = ["name", "path", "size", "type"]
+    return df.sort("name", "type")
 
 
 def convert_fit_json(
@@ -390,7 +411,7 @@ def convert_all_fit_polars(
 
         print(f"{i+1:5d}/{len(files)}: {act_id}", "(skip)" * skip)
         if not skip:
-            metadata, points = convert_fit_polars(fp)
+            _, points = convert_fit_polars(fp)
             points.write_parquet(path_out)
 
 

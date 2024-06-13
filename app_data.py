@@ -11,12 +11,12 @@ import app_functions.plot_functions as plotf
 app = Dash(__name__)
 
 found_files = dataf.find_importable("data", dataf.IMPORT_TYPES)
-file_counts = found_files.type.value_counts()
+file_counts = found_files["type"].value_counts()
+print(file_counts)
 
-lines = [f"{k} : {file_counts[k]}" for k in file_counts.index]
+lines = [str(k) for k in file_counts]
 
 div = dcc.Markdown(children="## Found \n\n" + "\n\n".join(lines))
-
 
 
 app.layout = div

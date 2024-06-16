@@ -14,7 +14,10 @@ found_files = dataf.find_importable("data", dataf.IMPORT_TYPES)
 file_counts = found_files["type"].value_counts()
 print(file_counts)
 
-lines = [str(k) for k in file_counts]
+lines = [
+    f"""{file_counts[k,"type"]}: {file_counts[k,"count"]}"""
+    for k in range(len(file_counts))
+]
 
 div = dcc.Markdown(children="## Found \n\n" + "\n\n".join(lines))
 

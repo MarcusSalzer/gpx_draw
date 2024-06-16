@@ -8,7 +8,6 @@ from glob import glob
 import fitdecode
 import gpxpy
 import gpxpy.gpx
-import msgspec.json
 import numpy as np
 import pandas as pd
 import polars as pl

@@ -25,15 +25,14 @@ Comparison of file formats for the activity "10022032783", average of 10 trials.
 | `.fit.gz`  | 128kB     | 920ms     | N/A       |
 | `.json`    | 528kB     | 10ms      |           |
 | `.json.gz` | 106kB     | 10ms      |           |
-
-**Conclusion**: `json` file (especially compressed) looks promising.
+| `.parquet` |           |           |           |
 
 ### Loading many activities
 
 Loading time for 1100 activities (a total of 1 862 000 points)
 
 | format                                   | total file size | load time | save time |
-|------------------------|----------------|----------------|----------------|
+|----------------------|-----------------|-----------------|-----------------|
 | 1100 `.json` files                       | 220 MB          | 5s        | 24s       |
 | 1100 `.json.gz` files                    | 41 MB           | 6s        | 54s       |
 | 1100 `.json` files (pandas, points only) | 151 MB          | 9s        | 13s       |
@@ -41,6 +40,10 @@ Loading time for 1100 activities (a total of 1 862 000 points)
 | 1 combined `.json.gz` file               | 41 MB           | 5s        | 49s       |
 
 **Conclusion**: Loading compressed files is not a problem, but saving them takes time. Separate files, or one combined doesn't matter (for now)
+
+### checking file
+
+We can check the schema of a `.parquet` file to ensure it is an activity:
 
 ### Conversions
 

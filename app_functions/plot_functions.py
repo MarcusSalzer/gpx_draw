@@ -1,7 +1,18 @@
 import gpxpy
 import gpxpy.gpx
-from plotly import express as px, graph_objects as go, subplots as ps
+from plotly import express as px, graph_objects as go, subplots as ps, io as pio
 import pandas as pd
+import polars as pl
+
+PLOT_TEMPLATE = pio.templates["plotly_dark"]
+PLOT_TEMPLATE.layout.autosize = False
+PLOT_TEMPLATE.layout.width = 500
+PLOT_TEMPLATE.layout.height = 300
+PLOT_TEMPLATE.layout.margin = dict(t=50, l=80, r=50, b=50)
+PLOT_TEMPLATE.layout.title.x = 0.5
+PLOT_TEMPLATE.layout.dragmode = "pan"
+
+pio.templates.default = PLOT_TEMPLATE
 
 
 def plot_one_gpx(gpx: gpxpy.gpx.GPX = None, show_grid=False) -> go.Figure:
@@ -49,4 +60,19 @@ def summary_plot(act_index: dict):
     act_year = df.groupby("year").size()
 
     fig = px.bar(act_year, template="plotly_dark")
+    return fig
+
+
+def polar_summary(data):
+    fig = go.Figure()
+    fig.add_trace(
+        go.Barpolar(
+            r=data["count"],
+            theta=data["month"].cast(str),
+            marker_color=data["month"],
+        )
+    )
+    fig.update_polars()
+    fig.update_traces()
+    fig.update_layout(title="monthly distribution")
     return fig

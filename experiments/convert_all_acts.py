@@ -4,9 +4,9 @@ from app_functions import data_functions as dataf
 import os
 
 
-folder_in = os.path.join("data", "activities")
+folder_in = os.path.join("data", "baobao")
 folder_json = os.path.join("data", "activities_json")
-folder_parquet = os.path.join("data", "points_parquet")
+folder_parquet = os.path.join("data", "baobao")
 
 # TODO This crashes on not a FIT file
 # dataf.convert_all_activities_json(

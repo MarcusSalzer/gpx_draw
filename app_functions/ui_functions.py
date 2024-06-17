@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+import polars as pl
 
 import dash_ag_grid as dag
 import dash_bootstrap_components as dbc
@@ -57,6 +58,9 @@ def make_main_greeting(act_index: dict = None) -> dcc.Markdown:
 
     info_md = dcc.Markdown(children="\n ".join(lines), style={"padding": "50px"})
     return info_md
+
+
+
 
 
 def make_activity_list(act_index: dict) -> dag.AgGrid:

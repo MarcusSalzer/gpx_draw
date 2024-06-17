@@ -102,6 +102,35 @@ def index_activities_gpx(folder: str, old_index=None, verbose=False) -> dict[str
     return act_index
 
 
+def index_activities_polars(acts: dict[str, pl.DataFrame]) -> pl.DataFrame:
+    """Index a dict of id:dataframe pairs"""
+
+    SCHEMA_ACT_INDEX = {
+        "id": str,
+        "n_points": pl.UInt32,
+        "start_time": pl.Datetime,
+        "end_time": pl.Datetime,
+        "mid_long": pl.Float64,
+        "mid_lat": pl.Float64,
+    }
+    act_index = {k: [] for k in SCHEMA_ACT_INDEX.keys()}
+    for a_id in acts.keys():
+        act_index["id"].append(a_id)
+        act_index["n_points"].append(len(acts[a_id]))
+        start = acts[a_id][0, "time"]
+        end: pl.Datetime = acts[a_id][-1, "time"]
+        act_index["start_time"].append(start)
+        act_index["end_time"].append(end)
+        act_index["mid_long"].append(acts[a_id]["long"].mean())
+        act_index["mid_lat"].append(acts[a_id]["lat"].mean())
+
+    act_index = pl.from_dict(act_index, schema=SCHEMA_ACT_INDEX)
+    act_index = act_index.with_columns(
+        (pl.col("end_time") - pl.col("start_time")).alias("duration")
+    )
+    return act_index
+
+
 def info_from_gpx_track(track) -> dict[str]:
     """Extract common metadata from a gpx_track"""
     act_info = dict()
@@ -182,13 +211,18 @@ def load_act_index(filepath) -> dict:
         )
     return act_index
 
-def load_parquet_acts(filepaths):
-    all_acts = {}
-    for fp in filepaths:
-        id = os.path.split(fp)[-1].split(".")[0]
-        all_acts[id] = pl.read_parquet(fp)
 
-    return all_acts
+def load_parquet(filepath, cols_required: set = None):
+    if cols_required:
+        lazy = pl.scan_parquet(filepath)
+        for col in cols_required:
+            if col not in lazy.columns:
+                raise ValueError(f"missing column {col}")
+            if lazy.schema[col] == pl.Null:
+                raise ValueError(f"column {col} of Null type")
+        return lazy.collect()
+    else:
+        return pl.read_parquet(filepath)
 
 
 def save_json(filepath, obj):
@@ -432,3 +466,31 @@ def convert_all_activities_json(
                 print(i, "Convert", file)
             else:
                 print(i, "Skip   ", file)
+
+
+def safe_save(obj, filepath: str, overwrite=True, check_read=False):
+    """Safely save data as file."""
+
+    extension = filepath.split(".")[-1]
+
+    if not isinstance(obj, pl.DataFrame):
+        return NotImplemented
+
+    if extension != "parquet":
+        return NotImplemented
+
+    if (not overwrite) and os.path.exists(filepath):
+        raise FileExistsError("file exists, overwrite not enabled")
+
+    if isinstance(obj, pl.DataFrame):
+        with open(filepath + ".tmp", "wb") as f:
+            obj.write_parquet(f)
+
+        os.replace(filepath + ".tmp", filepath)
+
+        if check_read:
+            with open(filepath, "rb") as f:
+                test = pl.read_parquet(f)
+            return obj.equals(test)
+
+        return True

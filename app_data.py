@@ -57,7 +57,9 @@ act_info = dcc.Loading(
 
 summary_month = statsf.summary_month(act_index)
 
-round_plot = dcc.Graph(figure=plotf.polar_summary(summary_month), config=PLOT_CONFIG)
+round_plot = dcc.Graph(
+    figure=plotf.polar_summary_month(summary_month), config=PLOT_CONFIG
+)
 
 
 def make_act_summary(index_row):
@@ -69,23 +71,47 @@ def make_act_summary(index_row):
     act_df = dataf.load_parquet(os.path.join(ACTIVITY_DF_DIR, act_id + ".parquet"))
 
     title = html.H1(children="Activity")
+    act_df_grid = dag.AgGrid(
+        id="grid-current",
+        rowData=act_df.to_pandas().to_dict("records"),
+        columnDefs=[{"field": i} for i in act_df.columns],
+    )
 
     act_info = html.Div(
         children=[
             title,
-            n_points,
-            start_time,
-            len(act_df),
+            act_df_grid,
         ]
     )
     return act_info
 
 
-grid = dag.AgGrid(
-    id="grid-acts",
-    rowData=act_index.to_pandas().to_dict("records"),
-    columnDefs=[{"field": i} for i in act_index.columns],
-)
+def make_act_list(act_index):
+    data = act_index.with_columns(pl.col("start_time").alias("date")).drop(
+        "start_time", "end_time"
+    )
+
+    # tp parse datetimes
+    date_obj = "d3.utcParse('%Y-%m-%dT%H:%M:%S%Z')(params.data.date)"
+
+    grid = dag.AgGrid(
+        id="grid-acts",
+        rowData=data.to_pandas().to_dict("records"),
+        columnDefs=[
+            {"field": "id"},
+            {"field": "n_points"},
+            {
+                "field": "date",
+                "valueFormatter": {
+                    "function": f"d3.timeFormat('%Y-%m-%d %H:%M:%S')({date_obj})"
+                },
+            },
+        ],
+    )
+    return grid
+
+
+act_list_grid = make_act_list(act_index)
 
 
 @callback(
@@ -98,7 +124,7 @@ def display_cell_clicked_on(cell):
     return None
 
 
-app.layout = html.Div([main_info, grid, act_info, round_plot])
+app.layout = html.Div([main_info, act_list_grid, act_info, round_plot])
 
 if __name__ == "__main__":
     print(act_index.head())

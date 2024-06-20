@@ -17,6 +17,7 @@ from dash_bootstrap_templates import load_figure_template
 
 import app_functions.data_functions as dataf
 import app_functions.plot_functions as plotf
+import app_functions.stats_functions as statsf
 
 # adds  templates to plotly.io
 load_figure_template(["minty", "minty_dark"])
@@ -53,14 +54,11 @@ def make_main_greeting(act_index: dict = None) -> dcc.Markdown:
 
         lines.append(f"- You have {n_act} activities.")
         lines.append("    - Total distance %.1f km." % (total_len / 1000))
-        lines.append("\nAll time, all activity E=%d" % dataf.eddington_nbr(act_index))
+        lines.append("\nAll time, all activity E=%d" % statsf.eddington_nbr_old(act_index))
         lines.append(f"\n*Last updated {updated.date()}*")
 
     info_md = dcc.Markdown(children="\n ".join(lines), style={"padding": "50px"})
     return info_md
-
-
-
 
 
 def make_activity_list(act_index: dict) -> dag.AgGrid:

@@ -339,30 +339,6 @@ def load_fit(filepath: str):
         return metadata, points
 
 
-def eddington_nbr(act_index: dict) -> int:
-    """Compute all time Eddington number (km/day) for all activities.
-    Based on 2d-distance per day"""
-
-    # count distance per day
-    dist_per_day = {}
-    for k in act_index["activities"].keys():
-        date = str(act_index["activities"][k]["time_start"].date())
-        if date in dist_per_day.keys():
-            dist_per_day[date] += act_index["activities"][k]["length2d_m"]
-        else:
-            dist_per_day[date] = act_index["activities"][k]["length2d_m"]
-
-    # Covert m -> km, sort descending.
-    dists = sorted((np.array(list(dist_per_day.values())) / 1000), reverse=True)
-
-    # Compute E. i counts number of days, d is the distance
-    E = 0
-    for i, d in enumerate(dists):
-        if d >= i + 1:
-            E = i + 1
-    return E
-
-
 def find_importable(folder: str, extensions=IMPORT_TYPES):
     """Find all files that could be imported as activities."""
 
@@ -374,6 +350,10 @@ def find_importable(folder: str, extensions=IMPORT_TYPES):
                 file_path = os.path.join(root, filename)
                 file_size = os.path.getsize(file_path)
                 matches.append((name, file_path, file_size, extension))
+
+    if not matches:
+        return None
+
     df = pl.DataFrame(matches)
     df.columns = ["name", "path", "size", "type"]
     return df.sort("name", "type")
@@ -468,7 +448,7 @@ def convert_all_activities_json(
                 print(i, "Skip   ", file)
 
 
-def safe_save(obj, filepath: str, overwrite=True, check_read=False):
+def  safe_save(obj, filepath: str, overwrite=True, check_read=False):
     """Safely save data as file."""
 
     extension = filepath.split(".")[-1]

@@ -98,8 +98,10 @@ def plot_summary_year(summary_year):
     fig.update_xaxes(dtick=1)
     return fig
 
-def plot_sumamry_month(summary_month):
-    last_year_only = True
+
+def plot_summary_month(summary_month: pl.DataFrame, y="count", last_year_only=True):
+    if y not in ("count", "duration"):
+        return NotImplemented
 
     dat = summary_month
     if last_year_only:
@@ -107,12 +109,19 @@ def plot_sumamry_month(summary_month):
         month_nbr_now = now.year * 12 + now.month
         dat = dat.filter(pl.col("month_nbr") >= month_nbr_now - 12)
 
+    if y == "count":
+        name = "Activities"
+        y_data = dat["count"]
+    elif y == "duration":
+        name = "Activity time"
+        y_data = (dat["duration"].dt.total_minutes() / 60).round(1)
+
     fig = px.bar(
         dat,
         x="month_nbr",
-        y="count",
+        y=y_data,
         orientation="v",
-        title="Activities per month" + " (last year)" * last_year_only,
+        title=name + " per month" + " (last year)" * last_year_only,
     )
 
     if len(dat) < 14:
@@ -157,3 +166,5 @@ def plot_points_geo(lat, long):
     )
     fig.update_layout(margin=dict(l=0, r=0, b=0))
     return fig
+
+

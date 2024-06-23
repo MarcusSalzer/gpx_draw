@@ -12,7 +12,6 @@ import numpy as np
 import pandas as pd
 import polars as pl
 
-from app_functions.activity import Act
 
 # CONSTANTS
 
@@ -294,7 +293,6 @@ def load_one_gpx(filepath: str):
 def load_fit(filepath: str):
     """Load a .fit-file, or compressed .fit.gz-file.
 
-    - act_dict (dict): dict of activity data (no processing or datatypes converted)
     Extract point-wise data from data-message named "record".
 
     ## Returns
@@ -359,51 +357,17 @@ def find_importable(folder: str, extensions=IMPORT_TYPES):
     return df.sort("name", "type")
 
 
-def convert_fit_json(
-    filepath: str,
-    folder_out: str,
-    overwrite=False,
-    compress=False,
-):
-    """Load activity file and save as JSON.
-
-    ## Parameters
-    - filepath (str): path to file (.fit, .fit.gz) #TODO GPX?
-    - output_folder (str): destination folder
-    - overwrite (bool): If true, convert and overwrite existing files
-    - compress (bool): If true, save as a compressed .json.gz file
-    - verbose (bool)
+def convert_fit_polars(filepath):
+    """Load a fit file to a dict of metadata and a dataframe of points.
 
     ## Returns
-    - completed (bool): transaction completed
+    - metadata (dict):
+    - points (pl.DataFrame):
     """
-
-    name, extension = os.path.split(filepath)[-1].split(".", maxsplit=1)
-
-    if compress:
-        extension_out = ".json.gz"
-    else:
-        extension_out = ".json"
-
-    path_out = os.path.join(folder_out, name + extension_out)
-
-    # Check if already exists
-    if (not overwrite) and os.path.exists(path_out):
-        return False
-
-    metadata, points = load_fit(filepath)
-    act = Act.from_dict(metadata.update({"points": points}))
-    save_json(filepath=path_out, obj=act.to_dict())
-    return True
-
-
-def convert_fit_polars(filepath):
-    """TODO"""
 
     act_id = os.path.split(filepath)[-1].split(".")[0]
     metadata, points = load_fit(filepath)
-
-    N_points = len(points["time"])
+    metadata["id"] = act_id
 
     points = pl.DataFrame(points)
     points = points.with_columns(points["hr"].cast(pl.UInt16))
@@ -422,47 +386,37 @@ def convert_all_fit_polars(
         if (not overwrite) and os.path.exists(path_out):
             skip = True
 
-        print(f"{i+1:5d}/{len(files)}: {act_id}", "(skip)" * skip)
-        if not skip:
-            _, points = convert_fit_polars(fp)
-            points.write_parquet(path_out)
-
-
-# TODO: include indexing here?
-def convert_all_activities_json(
-    folder_in: str, folder_out: str, overwrite=False, compress=False, verbose=False
-):
-    """Convert all activities in the folder to json"""
-
-    files = find_importable(folder_in, extensions=[".fit", ".fit.gz"])["path"]
-
-    if verbose:
-        print("found files", len(files))
-
-    for i, file in enumerate(files):
-        converted = convert_fit_json(file, folder_out, overwrite, compress)
         if verbose:
-            if converted:
-                print(i, "Convert", file)
-            else:
-                print(i, "Skip   ", file)
+            print(f"{i+1:5d}/{len(files)}: {act_id}", "(skip)" * skip)
+
+        if not skip:
+            metadata, points = convert_fit_polars(fp)
+            safe_save(points, path_out, overwrite, check_read=True)
+            safe_save(
+                metadata,
+                os.path.join(folder_out, act_id + "_meta.json"),
+                overwrite,
+                check_read=True,
+            )
 
 
-def  safe_save(obj, filepath: str, overwrite=True, check_read=False):
-    """Safely save data as file."""
+def safe_save(obj, filepath: str, overwrite=True, check_read=False):
+    """Safely save data as file.
 
-    extension = filepath.split(".")[-1]
+    ## Parameters
+    - obj (pl.Dataframe|dict|list)
+    - filepath (str): destination file including extension
+    - overwrite (bool): allow replacing files with same name
+    - check_read (bool): read file after saving and check equal to obj.
 
-    if not isinstance(obj, pl.DataFrame):
-        return NotImplemented
-
-    if extension != "parquet":
-        return NotImplemented
+    """
 
     if (not overwrite) and os.path.exists(filepath):
         raise FileExistsError("file exists, overwrite not enabled")
 
-    if isinstance(obj, pl.DataFrame):
+    # Save dataframe
+    if isinstance(obj, pl.DataFrame) and filepath[-7:] == "parquet":
+        # save temporary
         with open(filepath + ".tmp", "wb") as f:
             obj.write_parquet(f)
 
@@ -471,6 +425,22 @@ def  safe_save(obj, filepath: str, overwrite=True, check_read=False):
         if check_read:
             with open(filepath, "rb") as f:
                 test = pl.read_parquet(f)
-            return obj.equals(test)
-
+            if not obj.equals(test):
+                raise OSError("File read check failed.")
         return True
+    # Save JSON
+    elif isinstance(obj, (dict, list)) and filepath[-4:] == "json":
+        # save temporary
+        with open(filepath + ".tmp", mode="w", encoding="utf8") as f:
+            json.dump(obj, f, default=serialize_json, indent=4)
+
+        os.replace(filepath + ".tmp", filepath)
+
+        if check_read:
+            with open(filepath, encoding="utf8") as f:
+                test = json.load(f)
+            if not obj == test:
+                raise OSError("File read check failed.")
+        return True
+    else:
+        return NotImplemented

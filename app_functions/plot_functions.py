@@ -166,5 +166,3 @@ def plot_points_geo(lat, long):
     )
     fig.update_layout(margin=dict(l=0, r=0, b=0))
     return fig
-
-

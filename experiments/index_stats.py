@@ -12,11 +12,14 @@ tmp = default_timer()
 act_index = dataf.load_parquet(INDEX_PATH)
 t_load_index = default_timer() - tmp
 
-print(act_index.sort("start_time"))
 
 tmp = default_timer()
 summary_month = statsf.summary_month(act_index)
 t_sum_month = default_timer() - tmp
+
+tmp = default_timer()
+summary = statsf.summary_interval(act_index, interval="1w")
+t_sum = default_timer() - tmp
 
 
 def plot_summary_month():
@@ -27,5 +30,10 @@ def plot_summary_month():
 if __name__ == "__main__":
     print("loaded index:", t_load_index)
     print("made month summary:", t_sum_month)
+    print("made day summary  :", t_sum)
 
+    # print(summary_month.head())
     # plot_summary_month()
+
+    print(act_index)
+    print(summary)

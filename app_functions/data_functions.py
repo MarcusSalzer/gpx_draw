@@ -331,8 +331,8 @@ def load_fit(filepath: str):
                     elif frame.name == "sport":
                         sport_name = frame.get_value("name")
                         sport_main = frame.get_value("sport")
-                        sport_sub = frame.get_value("sub_sport")
-                        metadata["sport"] = [sport_name, sport_main, sport_sub]
+                        metadata["sport_spec"] = sport_name
+                        metadata["sport_main"] = sport_main
 
         return metadata, points
 

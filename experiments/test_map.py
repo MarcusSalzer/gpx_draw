@@ -1,21 +1,21 @@
-import pandas as pd
+import os
+
 import plotly.express as px
+import polars as pl
 
-us_cities = pd.read_csv(
-    "https://raw.githubusercontent.com/plotly/datasets/master/us-cities-top-1k.csv"
-)
+from app_functions import data_functions as dataf
+from app_functions import plot_functions as plotf
+from app_functions import stats_functions as statsf
 
+ACT_DIR = "data/points_parquet"
+INDEX_PATH = "data/activity_index.parquet"
 
-fig = px.scatter_mapbox(
-    us_cities,
-    lat="lat",
-    lon="lon",
-    hover_name="City",
-    hover_data=["State", "Population"],
-    color_discrete_sequence=["fuchsia"],
-    zoom=3,
-    height=300,
-)
-fig.update_layout(mapbox_style="open-street-map")
-fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
+act_index = dataf.load_parquet(INDEX_PATH)
+
+act_id = act_index.sort("start_time")[-1, "id"]
+
+act = dataf.load_parquet(os.path.join(ACT_DIR, act_id + ".parquet"))
+print(act)
+
+fig = plotf.points_map(act)
 fig.show()

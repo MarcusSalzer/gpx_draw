@@ -23,7 +23,6 @@ activity_index = dataf.load_act_index(os.path.join("data", "activity_index.json"
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 info_md = uif.make_main_greeting(activity_index)
-main_sum_plot = plotf.summary_plot(activity_index)
 
 activity_list = uif.make_activity_list(activity_index)
 
@@ -58,10 +57,6 @@ settings_page = uif.make_settings()
 
 tabs = dcc.Tabs(
     [
-        dcc.Tab(
-            label="Summary",
-            children=[info_md, dcc.Graph(figure=main_sum_plot, id="main-sum-plot")],
-        ),
         dcc.Tab(label="Activities", children=row1),
         dcc.Tab(label="Settings", children=settings_page),
     ]

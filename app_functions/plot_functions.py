@@ -4,6 +4,7 @@ from plotly import express as px, graph_objects as go, subplots as ps, io as pio
 import pandas as pd
 import polars as pl
 from datetime import datetime
+from typing import Literal
 
 PLOT_TEMPLATE = pio.templates["plotly_dark"]
 PLOT_TEMPLATE.layout.autosize = False
@@ -49,18 +50,6 @@ def plot_one_gpx(gpx: gpxpy.gpx.GPX = None, show_grid=False) -> go.Figure:
     # freeze vertical in altitude plot
     fig.update_yaxes(fixedrange=True, row=2, col=1)
 
-    return fig
-
-
-def summary_plot(act_index: dict):
-    """Plot an overview of indexed activities."""
-
-    df = pd.DataFrame.from_dict(act_index["activities"], orient="index")
-    df["time_start"] = pd.to_datetime(df["time_start"], format="%Y-%m-%d %H:%M:%S")
-    df["year"] = df["time_start"].dt.year
-    act_year = df.groupby("year").size()
-
-    fig = px.bar(act_year, template="plotly_dark")
     return fig
 
 
@@ -144,6 +133,46 @@ def plot_summary_month(summary_month: pl.DataFrame, y="count", last_year_only=Tr
     return fig
 
 
+def multi_summary_hist(summaries, names=None):
+    """Plot a list of summaries"""
+    fig = go.Figure()
+    for summ in summaries:
+        fig.add_trace(
+            go.Bar(
+                x=summ["date"],
+                y=summ["count"],
+            )
+        )
+    return fig
+
+
+def summary_hist(
+    summary: pl.DataFrame,
+    y: Literal["count", "length"] = "count",
+):
+    """Plot a histogram of a time-interval summary."""
+
+    fig = px.bar(
+        summary,
+        x="date",
+        y=y,
+        orientation="v",
+        title="Summary",
+    )
+
+    xaxis = dict(
+        tickmode="array",
+        tickvals=summary["date"],
+        ticktext=summary["label"],
+    )
+
+    fig.update_layout(
+        xaxis=xaxis,
+        yaxis_fixedrange=True,
+    )
+    return fig
+
+
 def plot_points_geo(lat, long):
     """TODO"""
 
@@ -165,4 +194,32 @@ def plot_points_geo(lat, long):
         title="Activity locations",
     )
     fig.update_layout(margin=dict(l=0, r=0, b=0))
+    return fig
+
+
+def points_map(data: pl.DataFrame):
+    """Plot points on a open-street-map"""
+    FACTOR_DEG = 2**32 / 360
+    MAP_MARGIN = 0.05
+
+    fig = px.scatter_mapbox(
+        lat=data["lat"] / FACTOR_DEG,
+        lon=data["long"] / FACTOR_DEG,
+        hover_name=data["time"],
+        hover_data=data["alt_enh", "hr"],
+        color_discrete_sequence=["red"],
+        # color=act["hr"].cast(pl.Float32),
+        # color_continuous_scale="magma",
+        height=600,
+    )
+    fig.update_layout(mapbox_style="open-street-map")
+    fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
+    fig.update_layout(
+        mapbox_bounds={
+            "west": data["long"].min() / FACTOR_DEG - MAP_MARGIN,
+            "east": data["long"].max() / FACTOR_DEG + MAP_MARGIN,
+            "south": data["lat"].min() / FACTOR_DEG - MAP_MARGIN,
+            "north": data["lat"].max() / FACTOR_DEG + MAP_MARGIN,
+        }
+    )
     return fig

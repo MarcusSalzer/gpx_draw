@@ -1,10 +1,9 @@
 import os
 from app_functions import data_functions as dataf
 from app_functions import stats_functions as statsf
-from app_functions import plot_functions as plotf
 import polars as pl
 
-from timeit import default_timer, timeit
+from timeit import timeit
 
 
 ACT_DIR = "data/points_parquet"

@@ -7,6 +7,7 @@ import dash_bootstrap_components as dbc
 from dash import (
     Input,
     Output,
+    State,
     Patch,
     callback,
     dcc,
@@ -94,7 +95,9 @@ def activity_list(act_index: pl.DataFrame) -> html.Div:
     )
 
     searchbar = dcc.Input(
-        id="searchbar-acts", placeholder="search...", style=STYLES["searchbar"]
+        id="searchbar-acts",
+        placeholder="search... (sports, dates, etc...)",
+        style=STYLES["searchbar"],
     )
 
     div = html.Div(children=[searchbar, grid], style={"height": "100%"})
@@ -112,11 +115,3 @@ def update_activity_filter(filter_value):
     return newFilter
 
 
-@callback(
-    Output("info-out", "children"),
-    Input("grid-acts", "cellClicked"),
-)
-def display_cell_clicked_on(cell: dict):
-    if cell:
-        return cell["rowId"]
-    return None

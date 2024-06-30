@@ -30,7 +30,7 @@ tmp = default_timer()
 summaries = dict.fromkeys(SPORTS)
 for sport in SPORTS:
     summaries[sport] = statsf.summary_interval(
-        act_index.filter(pl.col("sport_main ") == sport), INTERVAL
+        act_index.filter(pl.col("sport_main") == sport), INTERVAL
     )
 t_sum_sports = default_timer() - tmp
 
@@ -45,13 +45,15 @@ if __name__ == "__main__":
     # print(act_index)
     # print(summary)
 
-    plot_summaries = [
-        summaries["cycling"],
-        summaries["running"],
-    ]
+    plot_summaries = ["cycling", "running", "walking"]
 
     # summary_fig = plotf.plot_summary_histogram(summary[-12:], y="count")
-    summary_fig = plotf.multi_summary_hist(plot_summaries)
+    summary_fig = plotf.multi_summary_hist(
+        [summaries[s] for s in plot_summaries],
+        names=plot_summaries,
+        y_col="count",
+        plot_type="line",
+    )
     summary_fig.show()
 
     print("unique sports:", SPORTS)

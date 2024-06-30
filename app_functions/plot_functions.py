@@ -1,9 +1,8 @@
 import gpxpy
 import gpxpy.gpx
 from plotly import express as px, graph_objects as go, subplots as ps, io as pio
-import pandas as pd
 import polars as pl
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Literal
 
 PLOT_TEMPLATE = pio.templates["plotly_dark"]
@@ -133,16 +132,80 @@ def plot_summary_month(summary_month: pl.DataFrame, y="count", last_year_only=Tr
     return fig
 
 
-def multi_summary_hist(summaries, names=None):
+def multi_summary_hist(
+    summaries: list[pl.DataFrame],
+    names: list[str] = None,
+    y_col: str = "count",
+    plot_type: Literal["bar", "line"] = "bar",
+    title="Activity counts",
+    interval: Literal["1d", "1w", "1mo", "1y"] = None,
+):
     """Plot a list of summaries"""
+
+    # TODO: fix hover-info
+    # TODO: fix zeros
+    # TODO: problem when zooming when axis labels tilted
+    if not names:
+        names = [f"summary {k+1:2d}" for k in range(len(summaries))]
+
     fig = go.Figure()
-    for summ in summaries:
-        fig.add_trace(
-            go.Bar(
+    for summ, name in zip(summaries, names):
+        if plot_type == "bar":
+            trace = go.Bar(
                 x=summ["date"],
-                y=summ["count"],
+                y=summ[y_col],
+                name=name,
             )
+        elif plot_type == "line":
+            trace = go.Scatter(
+                x=summ["date"],
+                y=summ[y_col],
+                name=name,
+                mode="lines+markers",
+            )
+        fig.add_trace(trace)
+
+    fig.update_xaxes(
+        showgrid=False,
+        zeroline=False,
+    )
+    fig.update_yaxes(
+        range=[0, max(summ[y_col].max() for summ in summaries) + 1],
+        showgrid=False,
+        zeroline=False,
+        fixedrange=True,
+    )
+    fig.update_layout(title=title)
+
+    # adapt range and ticks
+    if interval:
+        tt = pl.concat([summ["date"] for summ in summaries], how="diagonal")
+        fig.update_xaxes(
+            tickmode="array",
+            tickvals=tt,
         )
+        if interval == "1y":
+            fig.update_xaxes(
+                title="year",
+                ticktext=tt.dt.strftime("%Y"),
+                range=[tt[0] - timedelta(days=200), tt[-1] + timedelta(days=200)],
+            )
+        elif interval == "1mo":
+            fig.update_xaxes(
+                title="month",
+                ticktext=tt.dt.strftime("%b %Y"),
+                range=[
+                    tt[-1] - timedelta(weeks=52, days=15),
+                    tt[-1] + timedelta(days=15),
+                ],
+            )
+        elif interval == "1w":
+            fig.update_xaxes(
+                title="week",
+                ticktext=tt.dt.strftime("w%W %Y"),
+                range=[tt[-1] - timedelta(weeks=8, days=4), tt[-1] + timedelta(days=4)],
+            )
+
     return fig
 
 

@@ -104,6 +104,6 @@ def layout():
 app.layout = html.Div(layout())
 
 if __name__ == "__main__":
-    print(act_index.columns)
-    print(summary.columns)
+    # print(act_index.columns)
+    # print(summary.columns)
     app.run(debug=True)

@@ -1,4 +1,12 @@
-.title{
+.title {
     color: aqua;
-    background-color: brown;
+    background-color: rgb(137, 137, 137);
+}
+
+.sp-run {
+    color: red
+}
+
+.sp-bike {
+    color: blue
 }

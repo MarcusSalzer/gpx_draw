@@ -13,22 +13,22 @@ from dash import (
     exceptions,
     html,
 )
-from dash_bootstrap_templates import load_figure_template
 
-import app_functions.data_functions as dataf
-import app_functions.plot_functions as plotf
-import app_functions.stats_functions as statsf
+STYLES = {
+    "button": {
+        "padding": "5px",
+        "margin": "10px",
+    },
+    "searchbar": {
+        "padding": "10px",
+        "margin": "0px",
+        "width": "100%",
+        "height": "40px",
+    },
+}
 
-# adds  templates to plotly.io
-load_figure_template(["minty", "minty_dark"])
 
-SETTINGS_PATH = os.path.join("data", "settings.json")
-
-activity_index = dataf.load_act_index(os.path.join("data", "activity_index.json"))
-settings_dict = dataf.load_json(SETTINGS_PATH)
-
-
-def make_main_greeting(act_index: dict = None) -> dcc.Markdown:
+def main_greeting(act_index: pl.DataFrame = None) -> dcc.Markdown:
     now = datetime.now()
 
     if 5 <= now.hour < 11:
@@ -47,62 +47,63 @@ def make_main_greeting(act_index: dict = None) -> dcc.Markdown:
         "This is a **prototype** ``dash`` app.",
     ]
 
-    if act_index:
-        n_act = len(act_index["activities"])
-        total_len = sum(act["length2d_m"] for act in act_index["activities"].values())
-        updated: datetime = act_index["updated"]
+    if act_index is not None:
+        n_act = len(act_index)
+        total_len = act_index["length"].sum()
 
         lines.append(f"- You have {n_act} activities.")
         lines.append("    - Total distance %.1f km." % (total_len / 1000))
-        lines.append("\nAll time, all activity E=%d" % statsf.eddington_nbr_old(act_index))
-        lines.append(f"\n*Last updated {updated.date()}*")
 
-    info_md = dcc.Markdown(children="\n ".join(lines), style={"padding": "50px"})
+    info_md = dcc.Markdown(children="\n ".join(lines))
     return info_md
 
 
-def make_activity_list(act_index: dict) -> dag.AgGrid:
-    """Create an example list."""
-    col_names = [
-        {
-            "field": "show",
-            "cellRenderer": "DBC_Button_Simple",
-        },
-        {"field": "name"},
-        {
-            "field": "length (km)",
-            "valueFormatter": {"function": "d3.format(',.2f')(params.value)"},
-        },
-        {"field": "date"},
-    ]
+def activity_list(act_index: pl.DataFrame) -> html.Div:
+    """Create a list of all activities."""
 
-    row_data = []
-    for act in act_index["activities"].values():
-        row_info = {
-            "name": act["name"],
-            "length (km)": act["length2d_m"] / 1000,
-            "date": act["time_start"].date(),
-            "show": "show",
-        }
-        row_data.append(row_info)
+    data = act_index.with_columns(pl.col("start_time").alias("date")).drop(
+        "start_time", "end_time"
+    )
+    # to parse datetimes
+    date_obj = "d3.utcParse('%Y-%m-%dT%H:%M:%S%Z')(params.data.date)"
 
     grid = dag.AgGrid(
-        id="act-list-grid",
+        id="grid-acts",
+        rowData=data.select("id", "n_points", "date", "length", "sport_spec")
+        .to_pandas()
+        .to_dict("records"),
+        columnDefs=[
+            {
+                "field": "date",
+                "valueFormatter": {
+                    "function": f"d3.timeFormat('%Y-%m-%d %H:%M:%S')({date_obj})"
+                },
+            },
+            {
+                "field": "length",
+                "valueFormatter": {"function": "d3.format(',.2f')(params.value/1000)"},
+            },
+            {"field": "sport_spec"},
+            {"field": "n_points"},
+            {"field": "id"},
+        ],
         columnSize="autoSize",
-        columnDefs=col_names,
-        rowData=row_data,
         defaultColDef={"flex": 1},
-        dashGridOptions={"animateRows": settings_dict["animate_ui"]},
+        dashGridOptions={"animateRows": True},
+        style={"height": "100%"},
     )
-    searchbar = dcc.Input(id="act-list-search", placeholder="search...")
 
-    div = html.Div(children=[searchbar, grid])
+    searchbar = dcc.Input(
+        id="searchbar-acts", placeholder="search...", style=STYLES["searchbar"]
+    )
+
+    div = html.Div(children=[searchbar, grid], style={"height": "100%"})
     return div
 
 
 @callback(
-    Output("act-list-grid", "dashGridOptions"),
-    Input("act-list-search", "value"),
+    Output("grid-acts", "dashGridOptions"),
+    Input("searchbar-acts", "value"),
 )
 def update_activity_filter(filter_value):
     """Callback. Apply a quick filter to activity list"""
@@ -112,90 +113,10 @@ def update_activity_filter(filter_value):
 
 
 @callback(
-    Output("fig-act-overview", "figure"),
-    Input("act-list-grid", "cellRendererData"),
+    Output("info-out", "children"),
+    Input("grid-acts", "cellClicked"),
 )
-def change_plot(n):
-    """Callback. Update the activity overview plot when selected from list."""
-    if not n:
-        raise exceptions.PreventUpdate()
-
-    idx = int(n["rowId"])
-    filename = list(activity_index["activities"].keys())[idx]
-    gpx = dataf.load_one_gpx(os.path.join("data", "activities", filename))
-
-    return plotf.plot_one_gpx(gpx)
-
-
-def make_settings():
-    """make settings page"""
-    components = [
-        html.H1("Settings", className="title"),
-        dcc.Checklist(
-            options=["animate_ui"],
-            id="checklist-settings",
-            value=[
-                k
-                for k in settings_dict.keys()
-                if (settings_dict[k] and isinstance(settings_dict[k], bool))
-            ],
-        ),
-        dcc.Markdown("settings take effect after restart (as of now)"),
-    ]
-    return html.Div(components, style={"padding": "20px"})
-
-
-@callback(
-    Input("checklist-settings", "value"),
-)
-def update_settings_checklist(val):
-    # update settings dict
-    for k in settings_dict.keys():
-        if isinstance(settings_dict[k], bool):
-            if k in val:
-                settings_dict[k] = True
-            else:
-                settings_dict[k] = False
-
-    dataf.save_settings(SETTINGS_PATH, settings_dict)
-
-
-def make_dark_light_switch():
-    return html.Span(
-        [
-            dbc.Label(className="fa fa-moon", html_for="switch"),
-            dbc.Switch(
-                id="switch",
-                value=True,
-                className="d-inline-block ms-1",
-                persistence=True,
-            ),
-            dbc.Label(className="fa fa-sun", html_for="switch"),
-        ]
-    )
-
-
-# @callback(
-#     Output("main-sum-plot", "figure"),
-#     Input("switch", "value"),
-# )
-# def update_figure_template(switch_on):
-#     # When using Patch() to update the figure template, you must use the figure template dict
-#     # from plotly.io  and not just the template name
-#     template = pio.templates["minty"] if switch_on else pio.templates["minty_dark"]
-
-#     patched_figure = Patch()
-#     patched_figure["layout"]["template"] = template
-#     return patched_figure
-
-
-# clientside_callback(
-#     """
-#     (switchOn) => {
-#        document.documentElement.setAttribute('data-bs-theme', switchOn ? 'light' : 'dark');
-#        return window.dash_clientside.no_update
-#     }
-#     """,
-#     Output("switch", "id"),
-#     Input("switch", "value"),
-# )
+def display_cell_clicked_on(cell: dict):
+    if cell:
+        return cell["rowId"]
+    return None

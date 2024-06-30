@@ -8,7 +8,6 @@ import polars as pl
 def summary_interval(
     act_index: pl.DataFrame,
     interval: Literal["1d", "1w", "1mo", "1y"],
-    # filter: dict[str], #TODO filter by sport etc!
 ):
     """Summarize activity index over a desired interval
 

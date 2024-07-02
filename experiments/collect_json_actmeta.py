@@ -19,7 +19,7 @@ rows = []
 for fp in files["path"]:
     rows.append(pl.read_json(fp))
 
-metadata = pl.concat(rows, how="vertical")
+metadata = pl.concat(rows, how="diagonal_relaxed")
 
 act_index = act_index.join(metadata, on="id")
 

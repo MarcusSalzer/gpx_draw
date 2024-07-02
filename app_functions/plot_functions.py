@@ -237,7 +237,7 @@ def summary_hist(
 
 
 def plot_points_geo(lat, long):
-    """TODO"""
+    """A simple plot of geographic points"""
 
     fig = go.Figure()
 
@@ -260,10 +260,10 @@ def plot_points_geo(lat, long):
     return fig
 
 
-def points_map(data: pl.DataFrame):
+def points_map(data: pl.DataFrame, setbounds=False):
     """Plot points on a open-street-map"""
-    FACTOR_DEG = 2**32 / 360
-    MAP_MARGIN = 0.05
+    FACTOR_DEG = 2**32 / 360  # convert integers to degrees
+    MAP_MARGIN = 0.05  # degrees margin when setting bounds
 
     fig = px.scatter_mapbox(
         lat=data["lat"] / FACTOR_DEG,
@@ -273,16 +273,17 @@ def points_map(data: pl.DataFrame):
         color_discrete_sequence=["red"],
         # color=act["hr"].cast(pl.Float32),
         # color_continuous_scale="magma",
-        height=600,
     )
     fig.update_layout(mapbox_style="open-street-map")
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
-    fig.update_layout(
-        mapbox_bounds={
-            "west": data["long"].min() / FACTOR_DEG - MAP_MARGIN,
-            "east": data["long"].max() / FACTOR_DEG + MAP_MARGIN,
-            "south": data["lat"].min() / FACTOR_DEG - MAP_MARGIN,
-            "north": data["lat"].max() / FACTOR_DEG + MAP_MARGIN,
-        }
-    )
+
+    if setbounds:
+        fig.update_layout(
+            mapbox_bounds={
+                "west": data["long"].min() / FACTOR_DEG - MAP_MARGIN,
+                "east": data["long"].max() / FACTOR_DEG + MAP_MARGIN,
+                "south": data["lat"].min() / FACTOR_DEG - MAP_MARGIN,
+                "north": data["lat"].max() / FACTOR_DEG + MAP_MARGIN,
+            }
+        )
     return fig

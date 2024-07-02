@@ -211,9 +211,18 @@ def load_act_index(filepath) -> dict:
     return act_index
 
 
-def load_parquet(filepath, cols_required: set = None):
+def load_parquet(filepath: str, cols_required: set = None):
+    """Load a parquet file.
+
+    ## Parameters
+    - filepath (str)
+    - cols_required (set): Raise ValueError if column missing/of null type.
+
+    ## Returns
+    - Dataframe (pl.DataFrame)
+    """
     if cols_required:
-        lazy = pl.scan_parquet(filepath)
+        lazy = pl.scan_parquet(filepath)  # TODO: read_parquet_schema better?
         for col in cols_required:
             if col not in lazy.columns:
                 raise ValueError(f"missing column {col}")

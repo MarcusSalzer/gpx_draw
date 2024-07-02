@@ -8,3 +8,4 @@ files = dataf.find_importable(folder_in, [".fit"])
 print(files)
 
 dataf.convert_all_fit_polars(folder_in, folder_parquet, overwrite=True)
+ 

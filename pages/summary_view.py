@@ -78,7 +78,7 @@ col_left = dbc.Col(
     children=[
         greeting,
         buttons_summary_interval,
-        summary_graph,
+        dcc.Loading(summary_graph),
     ]
 )
 col_right = dbc.Col(children=[act_list])

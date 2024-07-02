@@ -29,7 +29,7 @@ app.layout = html.Div(
             ]
         ),
         html.Hr(style={"color": "red"}),
-        dcc.Loading(main_div),
+        main_div,
         info_store,
     ]
 )
